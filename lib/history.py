@@ -40,8 +40,18 @@ class ChatHistoryManager:
     def create_chat_history_file(self, username, chat_id):
         path = self._get_file_path(username, chat_id)
         template = [
-            {"name": self.config['ai']['names'][0], "message": "Hi"}, 
-            {"name": self.config['ai']['names'][1], "message": "Hello"},
+            {
+                "name": self.config['ai']['names'][0],
+                "text": "Hello",
+                "data": None,
+                "type": "text",
+            },
+            {
+                "name": self.config['ai']['names'][1],
+                "text": "Hello",
+                "data": None,
+                "type": "text",
+            },
         ]
         self._write_encrypted_file(path, json.dumps(template))
 
