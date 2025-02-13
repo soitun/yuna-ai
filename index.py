@@ -2,13 +2,12 @@ import shutil
 from flask import Flask, request, send_from_directory, redirect, url_for
 from flask_login import LoginManager, UserMixin, login_required, logout_user, login_user, login_manager
 from lib.router import handle_history_request, handle_image_request, handle_message_request, handle_audio_request, handle_search_request, handle_textfile_request, subscribe, send_notification
-from lib.history import ChatHistoryManager
 from flask_cors import CORS
 import json
 import os
 from itsdangerous import URLSafeTimedSerializer
 from flask_compress import Compress
-from aiflow import agi
+from aiflow import agi, history
 config =  agi.get_config()
 secret_key = config['security']['secret_key']
 serializer = URLSafeTimedSerializer(secret_key)
@@ -30,7 +29,7 @@ class YunaServer:
         login_manager.user_loader(self.user_loader)
         CORS(self.app, resources={r"/*": {"origins": "*"}})
         self.configure_routes()
-        self.chat_history_manager = ChatHistoryManager(config)
+        self.chat_history_manager = history.ChatHistoryManager(config=config, use_file=True)
         self.worker = agi.AGIWorker(config)
         self.worker.start()
         self.app.errorhandler(404)(self.page_not_found)
