@@ -219,7 +219,7 @@ class messageManager {
                         text: message,
                         chat: chatHistoryManagerInstance.selectedFilename,
                         useHistory: document.getElementById('useHistory').checked,
-                        kanojo: kanojoManagerInstance.buildPrompt(kanojoManagerInstance.selectedKanojo, promptManagerInstance.getTemplate(promptManagerInstance.selectedTemplate)),
+                        kanojo: kanojoManagerInstance.buildPrompt(kanojoManagerInstance.selectedKanojo),
                         speech: false,
                         yunaConfig: config_data,
                         stream: false
@@ -248,7 +248,7 @@ class messageManager {
                 text: userMsg,
                 chat: chatHistoryManagerInstance.selectedFilename,
                 useHistory: document.getElementById('useHistory').checked,
-                kanojo: kanojoManagerInstance.buildPrompt(kanojoManagerInstance.selectedKanojo, promptManagerInstance.getTemplate(promptManagerInstance.selectedTemplate)),
+                kanojo: kanojoManagerInstance.buildPrompt(kanojoManagerInstance.selectedKanojo),
                 speech: false,
                 yunaConfig: config_data,
                 stream: false

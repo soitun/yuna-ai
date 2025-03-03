@@ -1,33 +1,3 @@
-class promptTemplateManager {
-    constructor() {
-        this.templates = {
-            'dialog': 'You are having a friendly conversation.',
-            'creative': 'You are being creative and imaginative.',
-            'teaching': 'You are teaching and explaining concepts.'
-        };
-        this.loadTemplates();
-        this.selectedTemplate = 'diaog';
-    }
-
-    loadTemplates() {
-        const saved = localStorage.getItem('promptTemplates');
-        if (saved) this.templates = JSON.parse(saved);
-    }
-
-    saveTemplates() {
-        localStorage.setItem('promptTemplates', JSON.stringify(this.templates));
-    }
-
-    addTemplate(name, content) {
-        this.templates[name] = content;
-        this.saveTemplates();
-    }
-
-    getTemplate(name) {
-        return this.templates[name] || this.templates['dialog'];
-    }
-}
-
 class kanojoConnect {
     constructor() {
         this.kanojos = {};
@@ -37,7 +7,6 @@ class kanojoConnect {
         // Add default if empty
         if (!Object.keys(this.kanojos).length) {
             this.addKanojo(config_data.ai.names[1], {
-                name: config_data.ai.names[1],
                 memory: "",
                 character: `Name: ${config_data.ai.names[1]}\nPersonality: Friendly`
             });
@@ -58,91 +27,237 @@ class kanojoConnect {
         this.saveKanojos();
     }
 
+    updateKanojo(name, data) {
+        if (this.kanojos[name]) {
+            this.kanojos[name] = {...this.kanojos[name], ...data};
+            this.saveKanojos();
+            return true;
+        }
+        return false;
+    }
+
+    renameKanojo(oldName, newName) {
+        if (!this.kanojos[oldName] || this.kanojos[newName]) return false;
+        
+        this.kanojos[newName] = {...this.kanojos[oldName]};
+        delete this.kanojos[oldName];
+        this.saveKanojos();
+        return true;
+    }
+
+    deleteKanojo(name) {
+        if (!this.kanojos[name]) return false;
+        
+        delete this.kanojos[name];
+        this.saveKanojos();
+        return true;
+    }
+
     getKanojo(name) {
         return this.kanojos[name] || null;
     }
 
-    buildPrompt(name, template) {
+    buildPrompt(name) {
         const k = this.getKanojo(name);
         if (!k) return '';
         
-        return `<|begin_of_text|>\n<kanojo>${k.memory}\n${k.character}\n\nTask: ${template}</kanojo>\n<dialog>\n`;
+        return `<|begin_of_text|>\n<kanojo>${k.memory}\n${k.character}</kanojo>\n<dialog>\n`;
     }
 }
 
-// Initialize managers
-const promptManagerInstance = new promptTemplateManager();
+// Initialize manager
 const kanojoManagerInstance = new kanojoConnect();
 
 // DOM Ready handler
 document.addEventListener('DOMContentLoaded', () => {
-    // Populate selects
-    const populateSelect = (id, items) => {
-        const select = document.getElementById(id);
+    // Populate select
+    const populateKanojoSelect = () => {
+        const select = document.getElementById('kanojoSelect');
         if (!select) return;
-        select.innerHTML = Object.keys(items).map(name => 
+        
+        // Add all existing kanojos
+        let options = Object.keys(kanojoManagerInstance.kanojos).map(name => 
             `<option value="${name}">${name}</option>`
-        ).join('');
+        );
+        
+        // Add the "Create New" option
+        options.push('<option value="__new__">+ Create New</option>');
+        
+        select.innerHTML = options.join('');
     };
 
-    // Load data into forms
+    // Save the current kanojo data
+    const saveCurrentKanojo = () => {
+        const name = kanojoManagerInstance.selectedKanojo;
+        if (!name || name === '__new__') return;
+        
+        const memory = document.getElementById('kanojoMemory').value.trim();
+        const character = document.getElementById('kanojoCharacter').value.trim();
+        
+        kanojoManagerInstance.updateKanojo(name, { memory, character });
+    };
+
+    // Load data into form
     const loadKanojoForm = () => {
         const name = document.getElementById('kanojoSelect').value;
+        
+        // Handle "Create New" option
+        if (name === '__new__') {
+            // Prompt for new name
+            const newName = prompt('Enter name for new kanojo:');
+            if (!newName || newName.trim() === '') {
+                // Reset selection if canceled
+                document.getElementById('kanojoSelect').value = kanojoManagerInstance.selectedKanojo || 
+                    Object.keys(kanojoManagerInstance.kanojos)[0];
+                return;
+            }
+            
+            // Create new kanojo
+            kanojoManagerInstance.addKanojo(newName, {
+                memory: "",
+                character: `Name: ${newName}\nPersonality: Friendly`
+            });
+            
+            // Refresh the list and select the new one
+            populateKanojoSelect();
+            document.getElementById('kanojoSelect').value = newName;
+            kanojoManagerInstance.selectedKanojo = newName;
+        }
+        
+        // Load the selected kanojo
         const k = kanojoManagerInstance.getKanojo(name);
         if (!k) return;
 
         kanojoManagerInstance.selectedKanojo = name;
-
-        document.getElementById('kanojoName').value = k.name;
+        
         document.getElementById('kanojoMemory').value = k.memory || '';
         document.getElementById('kanojoCharacter').value = k.character || '';
     };
 
-    const loadTemplateForm = () => {
-        const name = document.getElementById('promptTemplateSelect').value;
-        document.getElementById('promptTemplateName').value = name;
-        document.getElementById('promptTemplateContent').value = promptManagerInstance.getTemplate(name);
-    };
-
     // Initial setup
-    populateSelect('kanojoSelect', kanojoManagerInstance.kanojos);
-    populateSelect('promptTemplateSelect', promptManagerInstance.templates);
+    populateKanojoSelect();
     loadKanojoForm();
-    loadTemplateForm();
 
     // Event listeners
     document.getElementById('kanojoSelect')?.addEventListener('change', loadKanojoForm);
-    document.getElementById('promptTemplateSelect')?.addEventListener('change', loadTemplateForm);
+    
+    // Auto-save on edit
+    document.getElementById('kanojoMemory')?.addEventListener('input', saveCurrentKanojo);
+    document.getElementById('kanojoCharacter')?.addEventListener('input', saveCurrentKanojo);
 
-    document.getElementById('saveKanojo')?.addEventListener('click', () => {
-        const name = document.getElementById('kanojoName').value.trim();
-        const memory = document.getElementById('kanojoMemory').value.trim();
-        const character = document.getElementById('kanojoCharacter').value.trim();
-
-        if (!name || !character) {
-            alert('Name and character details required');
+    // Rename button
+    document.getElementById('renameKanojo')?.addEventListener('click', () => {
+        const currentName = kanojoManagerInstance.selectedKanojo;
+        if (!currentName || currentName === '__new__') {
+            alert('Please select a kanojo to rename');
             return;
         }
-
-        kanojoManagerInstance.addKanojo(name, { name, memory, character });
-        populateSelect('kanojoSelect', kanojoManagerInstance.kanojos);
-        document.getElementById('kanojoSelect').value = name;
+        
+        const newName = prompt('Enter new name:', currentName);
+        if (!newName || newName.trim() === '' || newName === currentName) {
+            return;
+        }
+        
+        if (kanojoManagerInstance.kanojos[newName]) {
+            alert('A kanojo with that name already exists');
+            return;
+        }
+        
+        if (kanojoManagerInstance.renameKanojo(currentName, newName)) {
+            kanojoManagerInstance.selectedKanojo = newName;
+            populateKanojoSelect();
+            document.getElementById('kanojoSelect').value = newName;
+        }
     });
-
-    document.getElementById('savePromptTemplate')?.addEventListener('click', () => {
-        const name = document.getElementById('promptTemplateName').value.trim();
-        const content = document.getElementById('promptTemplateContent').value.trim();
-
-        if (!name || !content) {
-            alert('Name and content required');
+    
+    // Delete button
+    document.getElementById('deleteKanojo')?.addEventListener('click', () => {
+        const currentName = kanojoManagerInstance.selectedKanojo;
+        if (!currentName || currentName === '__new__') {
+            alert('Please select a kanojo to delete');
             return;
         }
 
-        promptManagerInstance.addTemplate(name, content);
-        populateSelect('promptTemplateSelect', promptManagerInstance.templates);
-        document.getElementById('promptTemplateSelect').value = name;
+        // Ensure there's at least one kanojo remaining
+        if (Object.keys(kanojoManagerInstance.kanojos).length <= 1) {
+            alert('Cannot delete the last kanojo');
+            return;
+        }
+        
+        if (kanojoManagerInstance.deleteKanojo(currentName)) {
+            // Select another kanojo
+            const remaining = Object.keys(kanojoManagerInstance.kanojos)[0];
+            kanojoManagerInstance.selectedKanojo = remaining;
+            populateKanojoSelect();
+            document.getElementById('kanojoSelect').value = remaining;
+            loadKanojoForm();
+        }
+    });
+    
+    // Export buttons
+    document.getElementById('exportKanojos')?.addEventListener('click', () => {
+        const data = JSON.stringify(kanojoManagerInstance.kanojos, null, 2);
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'all_kanojos.json';
+        a.click();
+        
+        URL.revokeObjectURL(url);
+    });
+    
+    document.getElementById('exportSingleKanojo')?.addEventListener('click', () => {
+        const name = kanojoManagerInstance.selectedKanojo;
+        if (!name || name === '__new__') {
+            alert('Please select a kanojo to export');
+            return;
+        }
+        
+        const k = kanojoManagerInstance.getKanojo(name);
+        if (!k) return;
+        
+        const data = JSON.stringify({ [name]: k }, null, 2);
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${name}.json`;
+        a.click();
+        
+        URL.revokeObjectURL(url);
+    });
+    
+    // Import buttons
+    document.getElementById('importKanojos')?.addEventListener('click', () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'application/json';
+        
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    kanojoManagerInstance.kanojos = {...kanojoManagerInstance.kanojos, ...data};
+                    kanojoManagerInstance.saveKanojos();
+                    populateKanojoSelect();
+                    alert('Import successful');
+                } catch (err) {
+                    alert('Failed to import: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        };
+        
+        input.click();
     });
 });
 
 // build kanojo
-kanojoManagerInstance.buildPrompt(kanojoManagerInstance.selectedKanojo, promptManagerInstance.getTemplate(promptManagerInstance.selectedTemplate));
+kanojoManagerInstance.buildPrompt(kanojoManagerInstance.selectedKanojo);

@@ -5,10 +5,9 @@ config_data = {
         "agi": false,
         "emotions": false,
         "miru": false,
-        "search": false,
         "audio": false,
         "mind": false,
-        "voice": false,
+        "hanasu": false,
         "max_new_tokens": 1024,
         "context_length": 16384,
         "temperature": 0.7,
@@ -21,38 +20,32 @@ config_data = {
         "batch_size": 2048,
         "threads": 8,
         "gpu_layers": -1,
-        "use_mmap": false,
+        "use_mmap": true,
         "flash_attn": true,
         "use_mlock": true,
         "offload_kqv": true
     },
     "server": {
-        "port": "",
         "url": "",
-        "yuna_default_model": "yuna-ai-v4-q6_k",
-        "miru_model_type": "moondream",
-        "miru_default_model": "yuna-ai-miru-v0.gguf",
-        "eyes_default_model": "yuna-ai-miru-eye-v0.gguf",
+        "yuna_default_model": "lib/models/yuna/yuna-ai-v4-q5_k_m.gguf",
+        "miru_default_model": ["yuna-ai-miru-v0.gguf", "yuna-ai-miru-eye-v0.gguf"],
         "voice_default_model": "yuna-ai-voice-v1",
-        "voice_model_config": ["YunaAi-e200.ckpt", "YunaAi_e65_s2925.pth"],
+        "voice_model_config": ["YunaAi.ckpt", "YunaAi.pth"],
         "device": "mps",
         "yuna_text_mode": "koboldcpp",
+        "yuna_miru_mode": "moondream",
         "yuna_audio_mode": "siri",
         "yuna_reference_audio": "static/audio/reference.wav"
     },
     "settings": {
-        "pseudo_api": false,
-        "fuctions": false,
-        "notifications": false,
+        "fuctions": true,
+        "use_history": true,
         "customConfig": true,
         "sounds": true,
-        "use_history": true,
         "background_call": true,
-        "nsfw_filter": false,
         "streaming": true,
         "default_history_file": "history_template:general.json",
-        "default_kanojo": "Yuna",
-        "default_prompt_template": "dialog"
+        "default_kanojo": "Yuna"
     },
     "security": {
         "secret_key": "YourSecretKeyHere123!",
@@ -64,7 +57,7 @@ config_data = {
 // ChatHistoryManager Implementation
 class ChatHistoryManager {
     constructor() {
-        this.apiBaseUrl = `${config_data?.server?.url}${config_data?.server?.port}` || '';
+        this.apiBaseUrl = `${config_data?.server?.url}` || '';
         this.chats = [];
         this.selectedFilename = '';
     }

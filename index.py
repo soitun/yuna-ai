@@ -144,6 +144,4 @@ class YunaServer:
     def yuna_server(self): return send_from_directory('.', 'yuna.html')
 
 app = YunaServer().app
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=4848 if config["server"]["port"] == "" else config["server"]["port"], ssl_context=('lib/utils/cert.pem', 'lib/utils/key.pem'))
+if __name__ == '__main__': app.run(host='0.0.0.0', port=4848, ssl_context=('lib/cert.pem', 'lib/key.pem'))
