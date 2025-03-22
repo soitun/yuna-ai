@@ -1,8 +1,5 @@
-// Constants for localStorage keys
-const STORAGE_KEY = 'diaryNotes';
-
 // Data storage
-let data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+let data = JSON.parse(localStorage.getItem('diaryNotes')) || [];
 
 // Utility Function to Escape HTML (Prevent XSS)
 function escapeHTML(str) {
@@ -57,7 +54,7 @@ document.getElementById('note-form').addEventListener('submit', function(e) {
             date: date ? new Date(date).toISOString() : null
         };
         data.push(note);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        localStorage.setItem('diaryNotes', JSON.stringify(data));
         displayNotes();
         document.getElementById('note-form').reset();
         document.getElementById('dateField').style.display = 'none';
@@ -67,7 +64,7 @@ document.getElementById('note-form').addEventListener('submit', function(e) {
 // Delete Note
 function deleteNote(id) {
     data = data.filter(note => note.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem('diaryNotes', JSON.stringify(data));
     displayNotes();
 }
 

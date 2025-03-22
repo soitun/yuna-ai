@@ -3,7 +3,7 @@
 
 <head data-bs-theme="dark">
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=yes, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yuna Ai</title>
     <meta name="theme-color" content="#212529">
     <link rel="canonical" href="http://www.yuna-ai.com/">
@@ -28,7 +28,6 @@
     <link rel="icon" type="image/jpeg" sizes="60x60" href="/static/img/yuna-ai.png">
     <link rel="manifest" href="/static/manifest.json">
     <link rel="stylesheet" href="/static/css/bootstrap.min.css" rel="preload" as="style" media="all">
-    <link rel="stylesheet" href="/static/css/awesome.css" rel="preload" as="style" media="all">
     <style>
         * {
             font-family: "kawai-font" !important;
@@ -94,27 +93,6 @@
             z-index: 2;
             box-shadow: 0 0 20px 20px rgba(255, 255, 255, 0.3);
         }
-
-        .btn:active::after {
-            content: '';
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            background: black;
-            border-radius: 50%;
-            z-index: 3;
-            transform: translate(-50%, -50%);
-            animation: fillScreen 0.5s forwards;
-        }
-
-        @keyframes fillScreen {
-            to {
-                width: 200%;
-                height: 200%;
-            }
-        }
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -159,7 +137,7 @@
                 <div class="col-md-6 text-center text-md-start mb-4 mb-md-0">
                     <h1 class="fw-bold">The Best Companion</h1>
                     <div class="hover-effect mt-4">
-                        <a href="/yuna.html" class="btn btn-primary shadow position-relative">
+                        <a href="#" class="btn btn-primary shadow position-relative" data-bs-toggle="modal" data-bs-target="#loginModal">
                             <img src="/static/img/yuna-ai.png" alt="Yuna Ai" class="img-fluid me-2"
                                 style="max-height: 30px;">
                             Login
@@ -344,6 +322,109 @@
             <p class="mb-0">Copyright © 2023 Yuna Ai</p>
         </div>
     </section>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen modal-dialog-centered">
+            <div class="modal-content bg-dark">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title" id="loginModalLabel">Account Management</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="container">
+                        <div class="row justify-content-center">
+                            <div class="col-md-9 col-lg-12 col-xl-10">
+                                <div class="card o-hidden border-0 my-5">
+                                    <div class="card-body p-0">
+                                        <div class="row">
+                                            <div class="col-lg-6">
+                                                <div class="p-5">
+                                                    <form method="post" class="user">
+                                                        <h2 class="text-center mb-4">Change Password</h2>
+                                                        <input type="hidden" name="action" value="change_password">
+                                                        <div class="mb-3">
+                                                            <input class="form-control form-control-user" type="password"
+                                                                name="current_password" placeholder="Current Password" required>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <input class="form-control form-control-user" type="password"
+                                                                name="new_password" placeholder="New Password" required>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <input class="form-control form-control-user" type="password"
+                                                                name="confirm_new_password" placeholder="Confirm New Password" required>
+                                                        </div>
+                                                        <button class="btn btn-primary btn-user w-100" type="submit">Change
+                                                            Password</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                
+                                            <div class="col-lg-6">
+                                                <div class="p-5">
+                                                    <form method="post" class="user">
+                                                        <h2 class="text-center mb-4">New User</h2>
+                                                        <input type="hidden" name="action" value="register">
+                                                        <div class="mb-3">
+                                                            <input class="form-control form-control-user" type="text" name="username"
+                                                                placeholder="Username" required>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <input class="form-control form-control-user" type="password"
+                                                                name="password" placeholder="Password" required>
+                                                        </div>
+                                                        <button class="btn btn-primary btn-user w-100" type="submit">Register</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                
+                                            <div class="col-lg-6">
+                                                <div class="p-5">
+                                                    <form method="post" class="user">
+                                                        <h2 class="text-center mb-4">Login</h2>
+                                                        <input type="hidden" name="action" value="login">
+                                                        <div class="mb-3">
+                                                            <input class="form-control form-control-user" type="text" name="username"
+                                                                placeholder="Username" required>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <input class="form-control form-control-user" type="password"
+                                                                name="password" placeholder="Password" required>
+                                                        </div>
+                                                        <button class="btn btn-primary btn-user w-100" type="submit">Login</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                
+                                            <div class="col-lg-6">
+                                                <div class="p-5">
+                                                    <form method="post" class="user">
+                                                        <h2 class="text-center mb-4">Delete Account</h2>
+                                                        <input type="hidden" name="action" value="delete_account">
+                                                        <div class="mb-3">
+                                                            <input class="form-control form-control-user" type="text" name="username"
+                                                                placeholder="Username" required>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <input class="form-control form-control-user" type="password"
+                                                                name="password" placeholder="Password" required>
+                                                        </div>
+                                                        <button class="btn btn-primary btn-user w-100" type="submit">Delete
+                                                            Account</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="/static/js/bootstrap.min.js"></script>

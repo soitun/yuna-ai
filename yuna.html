@@ -1,13 +1,34 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html data-bs-theme="dark" lang="en">
 
-<head>
+<head data-bs-theme="dark">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Your Private Companion">
     <title>Yuna Ai</title>
-    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <meta name="theme-color" content="#212529">
+    <link rel="canonical" href="http://www.yuna-ai.com/">
+    <meta property="og:url" content="http://www.yuna-ai.com/">
+    <meta property="og:description" content="Your Private Companion">
+    <meta name="twitter:image" content="http://www.yuna-ai.com/static/img/yuna-ai.png">
+    <meta name="twitter:title" content="Yuna Ai">
+    <meta property="og:image" content="http://www.yuna-ai.com/static/img/yuna-ai.png">
+    <meta name="description" content="Your Private Companion">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Yuna Ai">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:description" content="Your Private Companion">
+    <script type="application/ld+json">
+        {
+            "@context": "http://schema.org",
+            "@type": "WebSite",
+            "name": "Yuna Ai",
+            "url": "http://www.yuna-ai.com"
+        }
+    </script>
+    <link rel="icon" type="image/jpeg" sizes="60x60" href="/static/img/yuna-ai.png">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css" rel="preload" as="style" media="all">
+    <link href="/static/css/awesome.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/index.css">
     <script src="/static/js/index.js" defer></script>
     <script src="/static/js/history.js" defer></script>
@@ -16,6 +37,22 @@
     <script src="/static/js/markdown.js" defer></script>
     <script src="/static/js/pptxgen.js" defer></script>
     <script src="/static/js/creator.js" defer></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/static/sw.js').then(
+                    function (registration) {
+                        // Registration was successful
+                        console.log('ServiceWorker registration successful with scope: ', registration
+                            .scope)
+                    },
+                    function (err) {
+                        // registration failed :(
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
 </head>
 
 <body>
@@ -50,13 +87,13 @@
     <!-- Main Chat Area -->
     <div class="chat-container" id="chatContainer">
         <div class="message message-ai">
-            Hello! I'm Yuna, your adorable AI companion. How can I assist you today?
+            Hi, Yuki! I'm Yuna, your little companion.
         </div>
         <div class="message message-user">
             Hi Yuna! I'm excited to chat with you.
         </div>
         <div class="message message-ai">
-            That's wonderful! Let's make our conversations fun and productive.
+            That's wonderful!
         </div>
     </div>
 

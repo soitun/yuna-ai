@@ -18,8 +18,10 @@ const closeAllPanels = () => {
 };
 
 // Modal Management Functions
-const showCallModal = () => new bootstrap.Modal(document.getElementById('callModal'), 
-    { backdrop: 'static', keyboard: false }).show();
+const showCallModal = () => new bootstrap.Modal(document.getElementById('callModal'), {
+    backdrop: 'static',
+    keyboard: false
+}).show();
 
 const endCall = () => {
     resetCallUI();
@@ -35,20 +37,20 @@ const handleFileAttachment = () => {
     fileInput.type = 'file';
     fileInput.multiple = true;
     fileInput.accept = 'image/*,video/*,audio/*,text/*';
-    
+
     fileInput.onchange = (e) => {
         const files = Array.from(e.target.files);
         currentAttachments = files;
         updateAttachmentIndicator();
     };
-    
+
     fileInput.click();
 };
 
 const updateAttachmentIndicator = () => {
     const attachButton = document.querySelector('.attach-button');
     const messageInput = document.getElementById('messageInput');
-    
+
     if (currentAttachments.length > 0) {
         attachButton.classList.add('has-attachments');
         attachButton.innerHTML = `<i class="fas fa-paperclip"></i> ${currentAttachments.length}`;
@@ -81,11 +83,50 @@ class messageManager {
     }
 
     renderMessage(message) {
+        // Generate a unique ID if the message doesn't already have one
+        if (!message.id) {
+            message.id = this.generateUniqueId();
+        }
+
         const msgDiv = document.createElement('div');
-        msgDiv.id = this.generateUniqueId();
+        msgDiv.id = message.id;
         msgDiv.className = `message message-${message.name === 'Yuna' ? 'ai' : 'user'}`;
 
-        const { src, description, render = true, type } = message.data || {};
+        // Create message action buttons
+        const actionButtons = document.createElement('div');
+        actionButtons.className = 'message-actions';
+
+        // Create delete button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'action-btn delete-btn';
+        deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+        deleteBtn.title = 'Delete message';
+        deleteBtn.onclick = (e) => {
+            e.stopPropagation();
+            this.deleteMessage(message.id);
+        };
+
+        // Create regenerate button (only for user messages)
+        if (message.name !== 'Yuna') {
+            const regenerateBtn = document.createElement('button');
+            regenerateBtn.className = 'action-btn regenerate-btn';
+            regenerateBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+            regenerateBtn.title = 'Regenerate response';
+            regenerateBtn.onclick = (e) => {
+                e.stopPropagation();
+                this.regenerateMessage(message.id);
+            };
+            actionButtons.appendChild(regenerateBtn);
+        }
+
+        actionButtons.appendChild(deleteBtn);
+
+        const {
+            src,
+            description,
+            render = true,
+            type
+        } = message.data || {};
         const createMediaElement = (tag, src, type) => {
             const media = document.createElement(tag);
             media.src = src;
@@ -94,7 +135,7 @@ class messageManager {
             media.addEventListener('click', () => openMediaModal(src, type));
             return media;
         };
-    
+
         if (['image', 'multiimage', 'video', 'mixed-text', 'yunafile'].includes(message.type)) {
             if (!render) {
                 msgDiv.textContent = description;
@@ -130,25 +171,27 @@ class messageManager {
         } else {
             msgDiv.textContent = message.text;
         }
-    
+
+        msgDiv.appendChild(actionButtons);
         this.container.appendChild(msgDiv);
         this.container.scrollTop = this.container.scrollHeight;
+        return message.id;
     }
 
     async sendMessage() {
         const input = document.getElementById('messageInput');
         const text = input.value.trim();
-        
+
         if (!text && currentAttachments.length === 0) return;
-    
+
         const processFiles = async (asMixed) => {
             try {
                 if (currentAttachments.length === 0) return null;
-    
+
                 const files = await Promise.all(
                     currentAttachments.map(file => fileToBase64(file))
                 );
-    
+
                 if (asMixed) {
                     return {
                         name: 'User',
@@ -156,15 +199,13 @@ class messageManager {
                         data: {
                             src: currentAttachments.length > 1 ? files : files[0],
                             description: currentAttachments[0].name,
-                            type: currentAttachments.length > 1 ? 'multiimage' : 
-                                  currentAttachments[0].type.startsWith('image/') ? 'image' :
-                                  currentAttachments[0].type.startsWith('video/') ? 'video' : 'yunafile',
+                            type: currentAttachments.length > 1 ? 'multiimage' : currentAttachments[0].type.startsWith('image/') ? 'image' : currentAttachments[0].type.startsWith('video/') ? 'video' : 'yunafile',
                             render: true
                         },
                         text
                     };
                 }
-    
+
                 const firstFile = currentAttachments[0];
                 if (firstFile.type.startsWith('image/')) {
                     return {
@@ -203,7 +244,7 @@ class messageManager {
                 return null;
             }
         };
-    
+
         if (currentAttachments.length > 0) {
             const message = await processFiles(text ? confirm('Send as mixed message with text?') : false);
             if (message) {
@@ -211,36 +252,129 @@ class messageManager {
                 currentAttachments = [];
                 updateAttachmentIndicator();
                 input.value = '';
-    
+
                 fetch('/message', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        text: message,
-                        chat: chatHistoryManagerInstance.selectedFilename,
-                        useHistory: document.getElementById('useHistory').checked,
-                        kanojo: kanojoManagerInstance.buildPrompt(kanojoManagerInstance.selectedKanojo),
-                        speech: false,
-                        yunaConfig: config_data,
-                        stream: false
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            text: message,
+                            chat: chatHistoryManagerInstance.selectedFilename,
+                            useHistory: document.getElementById('useHistory').checked,
+                            kanojo: kanojoManagerInstance.buildPrompt(kanojoManagerInstance.selectedKanojo),
+                            speech: false,
+                            yunaConfig: config_data,
+                            stream: false
+                        })
                     })
-                })
-                .then(response => response.json())
-                .then(data => this.renderMessage({ 
-                    name: 'Yuna', 
-                    type: 'text', 
-                    text: data.response,
-                    data: null
-                }))
-                .catch(error => console.error('Error:', error));
+                    .then(response => response.json())
+                    .then(data => this.renderMessage({
+                        name: 'Yuna',
+                        type: 'text',
+                        text: data.response,
+                        data: null
+                    }))
+                    .catch(error => console.error('Error:', error));
             }
             return;
         }
-    
-        const userMsg = { name: 'User', type: 'text', text: text, data: null };
+
+        const userMsg = {
+            name: 'User',
+            type: 'text',
+            text: text,
+            data: null
+        };
         this.renderMessage(userMsg);
         input.value = '';
+
+        fetch('/message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    text: userMsg,
+                    chat: chatHistoryManagerInstance.selectedFilename,
+                    useHistory: document.getElementById('useHistory').checked,
+                    kanojo: kanojoManagerInstance.buildPrompt(kanojoManagerInstance.selectedKanojo),
+                    speech: false,
+                    yunaConfig: config_data,
+                    stream: false
+                })
+            })
+            .then(response => response.json())
+            .then(data => this.renderMessage({
+                name: 'Yuna',
+                type: 'text',
+                text: data.response,
+                data: null
+            }))
+            .catch(error => console.error('Error:', error));
+    }
+
+    // Add these methods to the messageManager class
+deleteMessage(messageId) {
+    if (!confirm('Are you sure you want to delete this message?')) return;
     
+    const messageElement = document.getElementById(messageId);
+    if (!messageElement) return;
+    
+    // Find the index of this message in chat history
+    fetch('/history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            task: 'delete_message',
+            chat: chatHistoryManagerInstance.selectedFilename,
+            text: messageId // Using the ID as the identifier
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.response === 'Message deleted successfully') {
+            messageElement.remove();
+        } else {
+            console.error('Failed to delete message:', data);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+    regenerateMessage(messageId) {
+        const messageElement = document.getElementById(messageId);
+        if (!messageElement) return;
+        
+        // Find the message content
+        let messageText = messageElement.textContent.trim();
+        // Remove the text from action buttons if present
+        const actionButtonsText = messageElement.querySelector('.message-actions')?.textContent.trim() || '';
+        if (actionButtonsText) {
+            messageText = messageText.replace(actionButtonsText, '').trim();
+        }
+        
+        // Remove all messages after this one
+        let next = messageElement.nextElementSibling;
+        const removedMessages = [];
+        while (next) {
+            removedMessages.push(next.id);
+            const temp = next;
+            next = next.nextElementSibling;
+            temp.remove();
+        }
+        
+        // Send message to regenerate response
+        const userMsg = { 
+            name: 'User', 
+            type: 'text', 
+            text: messageText, 
+            data: null, 
+            id: this.generateUniqueId()
+        };
+
+        this.renderMessage(userMsg);
+
         fetch('/message', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -251,7 +385,9 @@ class messageManager {
                 kanojo: kanojoManagerInstance.buildPrompt(kanojoManagerInstance.selectedKanojo),
                 speech: false,
                 yunaConfig: config_data,
-                stream: false
+                stream: false,
+                regenerate: true,
+                removedMessages: removedMessages
             })
         })
         .then(response => response.json())
@@ -259,7 +395,8 @@ class messageManager {
             name: 'Yuna', 
             type: 'text', 
             text: data.response,
-            data: null
+            data: null,
+            id: this.generateUniqueId()
         }))
         .catch(error => console.error('Error:', error));
     }
@@ -285,13 +422,15 @@ const saveAdvancedConfig = () => {
         topP: document.getElementById('topP').value
     };
     fetch('/save-config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
-    })
-    .then(response => response.json())
-    .then(data => alert(data.message))
-    .catch(error => console.error('Error:', error));
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(config)
+        })
+        .then(response => response.json())
+        .then(data => alert(data.message))
+        .catch(error => console.error('Error:', error));
 };
 
 // File Modal Submit
@@ -305,16 +444,18 @@ document.getElementById('fileSubmit').addEventListener('click', () => {
         const kanojoData = JSON.parse(reader.result);
         // Send to server
         fetch('/import-kanojo', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(kanojoData)
-        })
-        .then(response => response.json())
-        .then(data => {
-            alert(data.message);
-            fileInput.value = '';
-        })
-        .catch(error => console.error('Error:', error));
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(kanojoData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                fileInput.value = '';
+            })
+            .catch(error => console.error('Error:', error));
     };
     reader.readAsText(file);
 });
@@ -350,11 +491,17 @@ const openMediaModal = (src, type) => {
 
 // Make floating audio window draggable
 const makeDraggable = el => {
-    let pos = { x: 0, y: 0 };
+    let pos = {
+        x: 0,
+        y: 0
+    };
 
     const dragMouseDown = e => {
         e.preventDefault();
-        pos = { x: e.clientX, y: e.clientY };
+        pos = {
+            x: e.clientX,
+            y: e.clientY
+        };
         document.addEventListener('mouseup', closeDragElement);
         document.addEventListener('mousemove', elementDrag);
     };
@@ -363,7 +510,10 @@ const makeDraggable = el => {
         e.preventDefault();
         el.style.top = `${el.offsetTop + (e.clientY - pos.y)}px`;
         el.style.left = `${el.offsetLeft + (e.clientX - pos.x)}px`;
-        pos = { x: e.clientX, y: e.clientY };
+        pos = {
+            x: e.clientX,
+            y: e.clientY
+        };
     };
 
     const closeDragElement = () => {

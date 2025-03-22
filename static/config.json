@@ -33,7 +33,7 @@
         "voice_model_config": ["YunaAi.ckpt", "YunaAi.pth"],
         "device": "mps",
         "yuna_text_mode": "koboldcpp",
-        "yuna_miru_mode": "moondream",
+        "yuna_miru_mode": "native",
         "yuna_audio_mode": "siri",
         "yuna_reference_audio": "static/audio/reference.wav"
     },
