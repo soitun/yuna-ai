@@ -25,7 +25,7 @@ const handleFileAttachment = () => {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.multiple = true;
-    fileInput.accept = 'image/*,video/*,audio/*,text/*';
+    fileInput.accept = 'image/*,video/*,audio/*,text/*,.txt,.py,.js,.html,.css,.json,.xml,.md,.csv,.log,.conf,.ini,.yaml,.yml,.sh,.bat,.sql,.php,.cpp,.c,.h,.java,.cs,.rb,.go,.rs,.swift,.kt,.ts,.vue,.jsx,.tsx';
     fileInput.onchange = (e) => {
         currentAttachments = Array.from(e.target.files || []);
         updateAttachmentIndicator();
@@ -56,6 +56,14 @@ const fileToBase64 = (file) =>
         reader.readAsDataURL(file);
     });
 
+const fileToText = (file) =>
+    new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsText(file);
+    });
+
 // Message Manager
 class messageManager {
     constructor(containerId) {
@@ -81,30 +89,34 @@ class messageManager {
             msgDiv.appendChild(textDiv);
         }
 
+        // Create action buttons based on message type
         const actionButtons = document.createElement('div');
         actionButtons.className = 'message-actions';
 
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'action-btn delete-btn';
-        deleteBtn.innerHTML = '<i class="bi-trash"></i>';
-        deleteBtn.title = 'Delete message';
-        deleteBtn.onclick = (e) => {
-            e.stopPropagation();
-            this.deleteMessage(message.id);
-        };
+        const isAI = message.name === 'Yuna';
+        const isUser = !isAI;
 
-        if (message.name !== 'Yuna') {
-            const regenerateBtn = document.createElement('button');
-            regenerateBtn.className = 'action-btn regenerate-btn';
-            regenerateBtn.innerHTML = '<i class="bi-arrow-clockwise"></i>';
-            regenerateBtn.title = 'Regenerate response';
-            regenerateBtn.onclick = (e) => {
-                e.stopPropagation();
-                this.regenerateMessage(message.id);
-            };
+        // Common buttons for both AI and User messages
+        const copyBtn = this.createActionButton('bi-clipboard', 'Copy', () => this.copyMessage(message.id));
+        const editBtn = this.createActionButton('bi-pencil', 'Edit', () => this.editMessage(message.id));
+        const deleteBtn = this.createActionButton('bi-trash', 'Delete', () => this.deleteMessage(message.id));
+        const deleteAllBelowBtn = this.createActionButton('bi-trash3', 'Delete all below', () => this.deleteAllBelow(message.id));
+
+        if (isUser) {
+            // User message buttons: edit, delete, copy, delete all below
+            actionButtons.appendChild(editBtn);
+            actionButtons.appendChild(deleteBtn);
+            actionButtons.appendChild(copyBtn);
+            actionButtons.appendChild(deleteAllBelowBtn);
+        } else {
+            // AI message buttons: regenerate, edit, delete, copy, delete all below
+            const regenerateBtn = this.createActionButton('bi-arrow-clockwise', 'Regenerate', () => this.regenerateMessage(message.id));
             actionButtons.appendChild(regenerateBtn);
+            actionButtons.appendChild(editBtn);
+            actionButtons.appendChild(deleteBtn);
+            actionButtons.appendChild(copyBtn);
+            actionButtons.appendChild(deleteAllBelowBtn);
         }
-        actionButtons.appendChild(deleteBtn);
 
         const createMediaElement = (tag, src, type) => {
             const media = document.createElement(tag);
@@ -115,11 +127,23 @@ class messageManager {
             return media;
         };
 
+        const createTextFileElement = (path, name, content) => {
+            const fileDiv = document.createElement('div');
+            fileDiv.className = 'message-text-file';
+            fileDiv.innerHTML = `
+                <div class="text-file-header">
+                    <i class="bi-file-earmark-text"></i>
+                    <span class="text-file-name">${name}</span>
+                </div>
+                <div class="text-file-preview">${content.substring(0, 100)}${content.length > 100 ? '...' : ''}</div>
+            `;
+            fileDiv.addEventListener('click', () => openTextFileModal(name, content));
+            return fileDiv;
+        };
+
         if (message.data && Array.isArray(message.data)) {
             message.data.forEach(attachment => {
                 if (attachment.type === 'image') {
-                    // When loading from history, the path is the server path.
-                    // When sending, the src is a local dataURL. This handles both.
                     const imageSrc = attachment.path || attachment.src;
                     if (imageSrc) {
                         msgDiv.appendChild(createMediaElement('img', imageSrc, 'image'));
@@ -136,6 +160,12 @@ class messageManager {
                     if (audioSrc) {
                         msgDiv.appendChild(createMediaElement('audio', audioSrc, 'audio'));
                     }
+                }
+                else if (attachment.type === 'text') {
+                    const textFilePath = attachment.path || '#';
+                    const textFileName = attachment.name || 'text_file.txt';
+                    const textContent = attachment.content || '';
+                    msgDiv.appendChild(createTextFileElement(textFilePath, textFileName, textContent));
                 }
                 else if (attachment.type === 'yunafile') {
                     const fileLink = document.createElement('a');
@@ -154,6 +184,199 @@ class messageManager {
         return message.id;
     }
 
+    createActionButton(iconClass, title, onClick) {
+        const button = document.createElement('button');
+        button.className = 'action-btn';
+        button.innerHTML = `<i class="${iconClass}"></i>`;
+        button.title = title;
+        button.onclick = (e) => {
+            e.stopPropagation();
+            onClick();
+        };
+        return button;
+    }
+
+    copyMessage(messageId) {
+        const messageElement = document.getElementById(messageId);
+        if (!messageElement) return;
+
+        const textDiv = messageElement.querySelector('.message-text');
+        const text = textDiv ? textDiv.textContent : '';
+        
+        navigator.clipboard.writeText(text).then(() => {
+            // Show brief feedback
+            const originalTitle = messageElement.title;
+            messageElement.title = 'Copied!';
+            setTimeout(() => {
+                messageElement.title = originalTitle;
+            }, 1000);
+        }).catch(err => {
+            console.error('Failed to copy text:', err);
+        });
+    }
+
+    editMessage(messageId) {
+        const messageElement = document.getElementById(messageId);
+        if (!messageElement) return;
+
+        const textDiv = messageElement.querySelector('.message-text');
+        if (!textDiv) return;
+
+        const originalText = textDiv.textContent;
+        
+        // Create textarea for editing
+        const textarea = document.createElement('textarea');
+        textarea.className = 'edit-textarea';
+        textarea.value = originalText;
+        textarea.style.width = '100%';
+        textarea.style.minHeight = '60px';
+        textarea.style.resize = 'vertical';
+        
+        // Create save/cancel buttons
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'edit-buttons';
+        
+        const saveBtn = document.createElement('button');
+        saveBtn.className = 'btn btn-sm btn-primary me-2';
+        saveBtn.textContent = 'Save';
+        
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn btn-sm btn-secondary';
+        cancelBtn.textContent = 'Cancel';
+        
+        buttonContainer.appendChild(saveBtn);
+        buttonContainer.appendChild(cancelBtn);
+        
+        // Replace text with edit interface
+        textDiv.style.display = 'none';
+        textDiv.after(textarea);
+        textarea.after(buttonContainer);
+        textarea.focus();
+        
+        const cleanup = () => {
+            textarea.remove();
+            buttonContainer.remove();
+            textDiv.style.display = 'block';
+        };
+        
+        saveBtn.onclick = async () => {
+            const newText = textarea.value.trim();
+            if (newText !== originalText) {
+                try {
+                    const response = await fetch('/history', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            task: 'edit_message',
+                            chat: chatHistoryManagerInstance?.selectedFilename,
+                            message_id: messageId,
+                            new_text: newText
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    if (data.response === 'Message edited successfully') {
+                        textDiv.textContent = newText;
+                    } else {
+                        console.error('Failed to edit message:', data);
+                        alert('Failed to edit message');
+                    }
+                } catch (err) {
+                    console.error('Error editing message:', err);
+                    alert('Error editing message');
+                }
+            }
+            cleanup();
+        };
+        
+        cancelBtn.onclick = cleanup;
+        
+        // Save on Enter (with Ctrl/Cmd), cancel on Escape
+        textarea.onkeydown = (e) => {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                saveBtn.click();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                cancelBtn.click();
+            }
+        };
+    }
+
+    async deleteMessage(messageId) {
+        const messageElement = document.getElementById(messageId);
+        if (!messageElement) return;
+
+        if (!confirm('Are you sure you want to delete this message?')) return;
+
+        try {
+            const response = await fetch('/history', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    task: 'delete_message',
+                    chat: chatHistoryManagerInstance?.selectedFilename,
+                    message_id: messageId
+                })
+            });
+            
+            const data = await response.json();
+            if (data.response === 'Message deleted successfully') {
+                messageElement.remove();
+            } else {
+                console.error('Failed to delete message:', data);
+                alert('Failed to delete message');
+            }
+        } catch (err) {
+            console.error('Error deleting message:', err);
+            alert('Error deleting message');
+        }
+    }
+
+    async deleteAllBelow(messageId) {
+        const messageElement = document.getElementById(messageId);
+        if (!messageElement) return;
+
+        if (!confirm('Are you sure you want to delete all messages below this one?')) return;
+
+        // Get all messages below this one
+        const messagesToDelete = [];
+        let nextElement = messageElement.nextElementSibling;
+        while (nextElement && nextElement.classList.contains('message')) {
+            messagesToDelete.push(nextElement.id);
+            nextElement = nextElement.nextElementSibling;
+        }
+
+        if (messagesToDelete.length === 0) return;
+
+        try {
+            const response = await fetch('/history', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    task: 'delete_all_below',
+                    chat: chatHistoryManagerInstance?.selectedFilename,
+                    message_id: messageId
+                })
+            });
+            
+            const data = await response.json();
+            if (data.response === 'Messages deleted successfully') {
+                // Remove elements from UI
+                messagesToDelete.forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) element.remove();
+                });
+            } else {
+                console.error('Failed to delete messages:', data);
+                alert('Failed to delete messages');
+            }
+        } catch (err) {
+            console.error('Error deleting messages:', err);
+            alert('Error deleting messages');
+        }
+    }
+
     async sendMessage() {
         const input = document.getElementById('messageInput');
         const text = (input?.value || '').trim();
@@ -161,11 +384,24 @@ class messageManager {
 
         // Prepare attachments for the backend
         const attachmentData = await Promise.all(
-            currentAttachments.map(async (file) => ({
-                name: file.name,
-                type: file.type,
-                content: await fileToBase64(file) // Assumes fileToBase64 returns only the base64 part
-            }))
+            currentAttachments.map(async (file) => {
+                const isTextFile = file.type.startsWith('text/') || 
+                    /\.(txt|py|js|html|css|json|xml|md|csv|log|conf|ini|yaml|yml|sh|bat|sql|php|cpp|c|h|java|cs|rb|go|rs|swift|kt|ts|vue|jsx|tsx)$/i.test(file.name);
+                
+                if (isTextFile) {
+                    return {
+                        name: file.name,
+                        type: 'text',
+                        content: await fileToText(file)
+                    };
+                } else {
+                    return {
+                        name: file.name,
+                        type: file.type,
+                        content: await fileToBase64(file)
+                    };
+                }
+            })
         );
 
         // The user's message object with all data
@@ -182,21 +418,44 @@ class messageManager {
 
         // Render attachments visually if they exist
         currentAttachments.forEach(file => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const attachmentMsg = {
-                    name: 'User',
-                    type: file.type.startsWith('image/') ? 'image' : 'yunafile',
-                    data: {
-                        src: e.target.result,
-                        description: file.name,
-                        render: true
-                    },
-                    id: this.generateUniqueId()
+            const isTextFile = file.type.startsWith('text/') || 
+                /\.(txt|py|js|html|css|json|xml|md|csv|log|conf|ini|yaml|yml|sh|bat|sql|php|cpp|c|h|java|cs|rb|go|rs|swift|kt|ts|vue|jsx|tsx)$/i.test(file.name);
+            
+            if (isTextFile) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const attachmentMsg = {
+                        name: 'User',
+                        type: 'text',
+                        data: [{
+                            type: 'text',
+                            name: file.name,
+                            content: e.target.result,
+                            render: true
+                        }],
+                        id: this.generateUniqueId()
+                    };
+                    this.renderMessage(attachmentMsg);
                 };
-                this.renderMessage(attachmentMsg);
-            };
-            reader.readAsDataURL(file);
+                reader.readAsText(file);
+            } else {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const attachmentMsg = {
+                        name: 'User',
+                        type: file.type.startsWith('image/') ? 'image' : 'yunafile',
+                        data: [{
+                            type: file.type.startsWith('image/') ? 'image' : 'yunafile',
+                            src: e.target.result,
+                            description: file.name,
+                            render: true
+                        }],
+                        id: this.generateUniqueId()
+                    };
+                    this.renderMessage(attachmentMsg);
+                };
+                reader.readAsDataURL(file);
+            }
         });
 
         // Clear input and attachments after preparing them
@@ -204,94 +463,197 @@ class messageManager {
         currentAttachments = [];
         updateAttachmentIndicator();
 
-        // Send the complete user message object to the backend
-        fetch('/message', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                message: userMsg, // Send the whole user message object
-                chat: chatHistoryManagerInstance?.selectedFilename,
-                useHistory: document.getElementById('useHistory')?.checked,
-                kanojo: kanojoManagerInstance?.buildPrompt(kanojoManagerInstance?.selectedKanojo),
-                speech: false,
-                yunaConfig: typeof config_data !== 'undefined' ? config_data : undefined,
-                stream: false
-            })
-        })
-        .then(r => r.json())
-        .then(data => this.renderMessage({ name: 'Yuna', type: 'text', text: data.response, data: null }))
-        .catch(err => console.error('Error:', err));
-    }
+        // Check if streaming is enabled
+        const streamEnabled = document.getElementById('streamToggle')?.checked || false;
 
-    async deleteMessage(messageId) {
-        const messageElement = document.getElementById(messageId);
-        if (!messageElement) return;
+        if (streamEnabled) {
+            // Handle streaming response with real-time typing effect
+            const aiMessageId = this.generateUniqueId();
+            const aiMessageDiv = document.createElement('div');
+            aiMessageDiv.id = aiMessageId;
+            aiMessageDiv.className = 'message message-ai';
+            
+            const textDiv = document.createElement('div');
+            textDiv.className = 'message-text';
+            textDiv.textContent = ''; // Start empty
+            aiMessageDiv.appendChild(textDiv);
+            
+            this.container.appendChild(aiMessageDiv);
+            this.container.scrollTop = this.container.scrollHeight;
 
-        fetch('/history', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                task: 'delete_message',
-                chat: chatHistoryManagerInstance?.selectedFilename,
-                text: messageId
-            })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.response === 'Message deleted successfully') {
-                messageElement.remove();
-            } else {
-                console.error('Failed to delete message:', data);
+            try {
+                const response = await fetch('/message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: userMsg,
+                        chat: chatHistoryManagerInstance?.selectedFilename,
+                        useHistory: document.getElementById('useHistory')?.checked,
+                        kanojo: kanojoManagerInstance?.buildPrompt(kanojoManagerInstance?.selectedKanojo),
+                        speech: false,
+                        yunaConfig: typeof config_data !== 'undefined' ? config_data : undefined,
+                        stream: true
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    
+                    // Keep the last incomplete line in the buffer
+                    buffer = lines.pop() || '';
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const jsonStr = line.slice(6).trim();
+                                if (jsonStr) {
+                                    const data = JSON.parse(jsonStr);
+                                    
+                                    if (data.chunk) {
+                                        // Append the new chunk to existing text
+                                        textDiv.textContent += data.chunk;
+                                        this.container.scrollTop = this.container.scrollHeight;
+                                    }
+                                    
+                                    if (data.done) {
+                                        // Update the message ID to match the one from history
+                                        if (data.ai_message_id) {
+                                            aiMessageDiv.id = data.ai_message_id;
+                                        }
+                                        
+                                        // Add action buttons
+                                        const actionButtons = document.createElement('div');
+                                        actionButtons.className = 'message-actions';
+                                        
+                                        const regenerateBtn = this.createActionButton('bi-arrow-clockwise', 'Regenerate', () => this.regenerateMessage(aiMessageDiv.id));
+                                        const editBtn = this.createActionButton('bi-pencil', 'Edit', () => this.editMessage(aiMessageDiv.id));
+                                        const deleteBtn = this.createActionButton('bi-trash', 'Delete', () => this.deleteMessage(aiMessageDiv.id));
+                                        const copyBtn = this.createActionButton('bi-clipboard', 'Copy', () => this.copyMessage(aiMessageDiv.id));
+                                        const deleteAllBelowBtn = this.createActionButton('bi-trash3', 'Delete all below', () => this.deleteAllBelow(aiMessageDiv.id));
+                                        
+                                        actionButtons.appendChild(regenerateBtn);
+                                        actionButtons.appendChild(editBtn);
+                                        actionButtons.appendChild(deleteBtn);
+                                        actionButtons.appendChild(copyBtn);
+                                        actionButtons.appendChild(deleteAllBelowBtn);
+                                        
+                                        aiMessageDiv.appendChild(actionButtons);
+                                        break;
+                                    }
+                                    
+                                    if (data.error) {
+                                        textDiv.textContent = 'Error: ' + data.error;
+                                        break;
+                                    }
+                                }
+                            } catch (e) {
+                                console.error('Error parsing SSE data:', e, 'Line:', line);
+                            }
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('Streaming error:', err);
+                const textDiv = aiMessageDiv.querySelector('.message-text');
+                if (textDiv) {
+                    textDiv.textContent = 'Error: Failed to get response';
+                }
             }
-        })
-        .catch(err => console.error('Error:', err));
+        } else {
+            // Handle non-streaming response (existing code)
+            fetch('/message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: userMsg,
+                    chat: chatHistoryManagerInstance?.selectedFilename,
+                    useHistory: document.getElementById('useHistory')?.checked,
+                    kanojo: kanojoManagerInstance?.buildPrompt(kanojoManagerInstance?.selectedKanojo),
+                    speech: false,
+                    yunaConfig: typeof config_data !== 'undefined' ? config_data : undefined,
+                    stream: false
+                })
+            })
+            .then(r => r.json())
+            .then(data => this.renderMessage({
+                name: 'Yuna',
+                type: 'text',
+                text: data.response,
+                data: null,
+                id: data.ai_message_id // ensure DOM id matches history id
+            }))
+            .catch(err => console.error('Error:', err));
+        }
     }
 
     async regenerateMessage(messageId) {
         const messageElement = document.getElementById(messageId);
         if (!messageElement) return;
 
-        let messageText = (messageElement.textContent || '').trim();
-        const actionButtonsText = messageElement.querySelector('.message-actions')?.textContent.trim() || '';
-        if (actionButtonsText) messageText = messageText.replace(actionButtonsText, '').trim();
+        if (!confirm('This will delete this response and all messages below it, then regenerate. Continue?')) return;
 
-        // Remove the original message and all following messages from the UI
-        let next = messageElement;
-        while (next) {
-            const temp = next;
-            next = next.nextElementSibling;
-            temp.remove();
+        // Collect all elements from this AI message downwards to remove from UI later
+        let elementToRemove = messageElement;
+        const elementsToRemove = [];
+        while (elementToRemove) {
+            elementsToRemove.push(elementToRemove);
+            elementToRemove = elementToRemove.nextElementSibling;
+            if (elementToRemove && !elementToRemove.classList.contains('message')) break;
         }
 
-        // Create the new user message object to be sent
-        const userMsg = { name: 'User', type: 'text', text: messageText, data: [], id: this.generateUniqueId() };
+        try {
+            // The message object sent is now just a placeholder.
+            // The key is the 'messageId' of the AI response to regenerate from.
+            // The backend will handle history pruning and find the original user prompt.
+            const response = await fetch('/message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: { id: messageId }, // Pass the AI message ID
+                    chat: chatHistoryManagerInstance?.selectedFilename,
+                    useHistory: document.getElementById('useHistory')?.checked,
+                    kanojo: kanojoManagerInstance?.buildPrompt(kanojoManagerInstance?.selectedKanojo),
+                    speech: false,
+                    yunaConfig: typeof config_data !== 'undefined' ? config_data : undefined,
+                    stream: false,
+                    regenerate: true
+                })
+            });
 
-        // Render the new user message in the UI
-        this.renderMessage(userMsg);
+            if (!response.ok) {
+                throw new Error(`Server responded with status: ${response.status}`);
+            }
 
-        fetch('/message', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                message: userMsg,
-                chat: chatHistoryManagerInstance?.selectedFilename,
-                useHistory: document.getElementById('useHistory')?.checked,
-                kanojo: kanojoManagerInstance?.buildPrompt(kanojoManagerInstance?.selectedKanojo),
-                speech: false,
-                yunaConfig: typeof config_data !== 'undefined' ? config_data : undefined,
-                stream: false,
-                regenerate: true, // This flag tells the backend to truncate history before this message
-            })
-        })
-        .then(r => r.json())
-        .then(data => this.renderMessage({
-            name: 'Yuna',
-            type: 'text',
-            text: data.response,
-            data: null,
-            id: this.generateUniqueId()
-        }))
-        .catch(err => console.error('Error:', err));
+            const data = await response.json();
+
+            // On success, first remove the old messages from the UI
+            elementsToRemove.forEach(el => el.remove());
+
+            // Then render the new message
+            this.renderMessage({
+                name: 'Yuna',
+                type: 'text',
+                text: data.response,
+                data: null,
+                id: data.ai_message_id // use history's new AI id
+            });
+
+        } catch (err) {
+            console.error('Error during regeneration:', err);
+            alert('An error occurred during regeneration. Please check the console.');
+        }
     }
 }
 
@@ -307,6 +669,38 @@ const bindAttachButton = () => {
 };
 bindAttachButton();
 document.addEventListener('DOMContentLoaded', bindAttachButton);
+
+// Text File Modal
+const openTextFileModal = (name, content) => {
+    let modal = document.getElementById('textFileModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'textFileModal';
+        modal.className = 'modal fade';
+        modal.tabIndex = -1;
+        modal.innerHTML = `
+            <div class="modal-dialog modal-dialog-centered modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">File Content</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-file-content"></div>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(modal);
+    }
+
+    const modalTitle = modal.querySelector('.modal-title');
+    const contentDiv = modal.querySelector('.text-file-content');
+    
+    modalTitle.textContent = name;
+    contentDiv.innerHTML = `<pre><code>${content}</code></pre>`;
+
+    new bootstrap.Modal(modal).show();
+};
 
 class CallManager {
     constructor() {
@@ -592,16 +986,18 @@ try {
     Object.assign(window, {
         togglePanel,
         closeAllPanels,
-        showCallModal, // Already points to the instance method
-        endCall,         // Already points to the instance method
+        showCallModal,
+        endCall,
         toggleFloatingMenu,
         handleFileAttachment,
         updateAttachmentIndicator,
         fileToBase64,
+        fileToText,
         openMediaModal,
+        openTextFileModal,
         makeDraggable,
-        switchToAudio,   // Already points to the instance method
-        endAudioCall,    // Already points to the instance method
+        switchToAudio,
+        endAudioCall,
     });
     window.messageManagerInstance = messageManagerInstance;
     window.callManagerInstance = callManagerInstance;

@@ -239,7 +239,7 @@ const applySettings = () => {
         'use_history': 'useHistory',
         'background_call': 'backgroundCall',
         'nsfw_filter': 'nsfw',
-        'streaming': 'streaming'
+        'streaming': 'streamToggle'
     };
 
     // Apply each setting to corresponding checkbox

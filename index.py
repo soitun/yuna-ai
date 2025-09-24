@@ -257,21 +257,28 @@ class YunaServer:
             os.rmdir(f'db/history/{username}')
         return send_from_directory('.', 'index.html')
 
-def update_chat_history(chat_history_manager, user_id, chat_id, text, response, config, messageId, attachments_info=None):
+def update_chat_history(chat_history_manager, user_id, chat_id, text, response, config, messageId, attachments_info=None, append_user=True):
     chat_history = chat_history_manager.load_chat_history(user_id, chat_id)
-    if messageId is None: messageId = f"msg-{int(time() * 1000)}"
-    user_message = {"name": config['ai']['names'][0], "text": text, "id": messageId}
-    if attachments_info:
-        user_message["data"] = attachments_info
-        user_message["type"] = "image" if len(attachments_info) == 1 else "multi-image"
-    else:
-        user_message["data"] = None
-        user_message["type"] = "text"
-    chat_history.append(user_message)
+
+    # Optionally append the user message (normal send)
+    if append_user:
+        if messageId is None:
+            messageId = f"msg-{int(time() * 1000)}"
+        user_message = {"name": config['ai']['names'][0], "text": text, "id": messageId}
+        if attachments_info:
+            user_message["data"] = attachments_info
+            user_message["type"] = "image" if any(att.get('type') == 'image' for att in attachments_info) else "text"
+        else:
+            user_message["data"] = None
+            user_message["type"] = "text"
+        chat_history.append(user_message)
+
+    # Always append the AI message
     ai_message_id = f"msg-ai-{uuid.uuid4()}"
     ai_message = {"name": config['ai']['names'][1], "text": response, "data": None, "type": "text", "id": ai_message_id}
     chat_history.append(ai_message)
     chat_history_manager.save_chat_history(chat_history, user_id, chat_id)
+    return ai_message_id
 
 @login_required
 def handle_history_request(chat_history_manager):
@@ -288,8 +295,10 @@ def handle_history_request(chat_history_manager):
         'create': lambda: {'response': 'History created successfully'} if chat_history_manager.create_chat_history_file(user_id, chat_id) is None else None,
         'delete': lambda: {'response': 'History deleted successfully'} if chat_history_manager.delete_chat_history_file(user_id, chat_id) is None else None,
         'rename': lambda: {'response': 'History renamed successfully'} if chat_history_manager.rename_chat_history_file(user_id, chat_id, data.get('name')) is None else None,
-        'delete_message': lambda: {'response': 'Message deleted successfully'} if chat_history_manager.delete_message(user_id, chat_id, data.get('text')) is None else None,
-        'edit_message': lambda: {'response': 'Message edited successfully'} if chat_history_manager.edit_message(user_id, chat_id, data.get('text'), data.get('new_text')) is None else None
+        'delete_message': lambda: {'response': 'Message deleted successfully'} if chat_history_manager.delete_message(user_id, chat_id, data.get('message_id')) is None else None,
+        'edit_message': lambda: {'response': 'Message edited successfully'} if chat_history_manager.edit_message(user_id, chat_id, data.get('message_id'), data.get('new_text')) is None else None,
+        'delete_all_below': lambda: {'response': 'Messages deleted successfully'} if chat_history_manager.delete_all_below(user_id, chat_id, data.get('message_id')) is None else None,
+        'delete_from_message': lambda: {'response': 'Messages deleted successfully'} if chat_history_manager.delete_from_message(user_id, chat_id, data.get('message_id')) is None else None
     }
 
     if task in responses: return jsonify(responses[task]())
@@ -305,62 +314,129 @@ def handle_message_request(worker, chat_history_manager, config):
     useHistory = data.get('useHistory', False)
     stream = data.get('stream', False)
     regenerate = data.get('regenerate', False)
-    text = message_obj.get('text', '')
-    attachments = message_obj.get('data', [])
     messageId = message_obj.get('id')
     yuna_config = worker.config if data.get('yunaConfig') else None
     user_id = current_user.get_id()
     chat_history = chat_history_manager.load_chat_history(user_id, chat_id)
 
+    append_user = True
+    
     if regenerate:
-        index_to_truncate = -1
-        for i, msg in enumerate(chat_history):
-            if msg.get('id') == messageId:
-                index_to_truncate = i
-                break
-        if index_to_truncate != -1:
-            chat_history = chat_history[:index_to_truncate]
+        idx = next((i for i, m in enumerate(chat_history) if m.get('id') == messageId), -1)
+        if idx != -1:
+            chat_history = chat_history[:idx]
             chat_history_manager.save_chat_history(chat_history, user_id, chat_id)
+            append_user = False
+            last_user_message = chat_history[-1] if chat_history else {}
+            text = last_user_message.get('text', '')
+            attachments = last_user_message.get('data', [])
+        else:
+            regenerate = False
+            text = message_obj.get('text', '')
+            attachments = message_obj.get('data', [])
+    else:
+        text = message_obj.get('text', '')
+        attachments = message_obj.get('data', [])
 
     processed_text = text
-    image_path_for_vlm = None
-    attachments_info_for_history = []
+    image_paths_for_vlm = []
+    attachments_info_for_history = [] 
 
     if attachments:
         upload_dir = os.path.join('static', 'img', 'call')
+        text_upload_dir = os.path.join('static', 'text')
         os.makedirs(upload_dir, exist_ok=True)
+        os.makedirs(text_upload_dir, exist_ok=True)
+        text_contents = []
         for attachment in attachments:
-            if attachment.get('type', '').startswith('image/'):
-                original_name = attachment.get('name', 'uploaded_image.jpg')
-                safe_filename = secure_filename(original_name)
-                unique_filename = f"{uuid.uuid4()}_{safe_filename}"
-                image_path = os.path.join(upload_dir, unique_filename)
-                image_data = attachment.get('content', '')
-                with open(image_path, "wb") as file: file.write(base64.b64decode(image_data))
-                print(f"Image successfully saved to {image_path}")
-                image_path_for_vlm = image_path
-                web_path = f"/{image_path}"
-                attachments_info_for_history.append({"type": "image", "path": web_path, "name": original_name})
+            if attachment.get('type') == 'text':
+                text_content = attachment.get('content', '')
+                text_contents.append(text_content)
+                if append_user:
+                    original_name = attachment.get('name', 'uploaded_file.txt')
+                    safe_filename = secure_filename(original_name)
+                    unique_filename = f"{uuid.uuid4()}_{safe_filename}"
+                    text_path = os.path.join(text_upload_dir, unique_filename)
+                    with open(text_path, "w", encoding='utf-8') as file: file.write(text_content)
+                    web_path = f"/{text_path}"
+                    attachments_info_for_history.append({
+                        "type": "text", "path": web_path, "name": original_name, "content": text_content
+                    })
+            elif attachment.get('type', '').startswith('image/'):
+                if not append_user and attachment.get('path'):
+                    existing_path = attachment.get('path', '').lstrip('/')
+                    if os.path.exists(existing_path): image_paths_for_vlm.append(existing_path)
+                elif append_user:
+                    original_name = attachment.get('name', 'uploaded_image.jpg')
+                    safe_filename = secure_filename(original_name)
+                    unique_filename = f"{uuid.uuid4()}_{safe_filename}"
+                    image_path = os.path.join(upload_dir, unique_filename)
+                    image_data = attachment.get('content', '')
+                    with open(image_path, "wb") as file: file.write(base64.b64decode(image_data))
+                    image_paths_for_vlm.append(image_path)
+                    web_path = f"/{image_path}"
+                    attachments_info_for_history.append({"type": "image", "path": web_path, "name": original_name})
+        if text_contents:
+            text_data = ''.join([f"<data>{content}</data>" for content in text_contents])
+            processed_text = f"{text}{text_data}" if text else text_data
 
-    response = worker.generate_text(processed_text, kanojo, chat_history, useHistory, yuna_config, stream, image_path=image_path_for_vlm)
+    response_gen = worker.generate_text(
+        processed_text,
+        kanojo,
+        chat_history,
+        useHistory,
+        yuna_config,
+        stream,
+        image_paths=image_paths_for_vlm,
+        append_current_user=append_user
+    )
 
     if stream:
         def generate_stream():
             response_text = ''
-            for chunk in response:
-                response_text += chunk
-                yield chunk
-            print("Response text:", response_text)
-            if useHistory:
-                update_chat_history(chat_history_manager, user_id, chat_id, text, response_text, config, messageId, attachments_info_for_history)
-                if speech: worker.speak_text(response_text)
-        return Response(generate_stream(), mimetype='text/plain')
+            ai_message_id = None
+            try:
+                # *** FIX HERE: We iterate over the generator instance ***
+                for chunk in response_gen: 
+                    response_text += chunk
+                    yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+                
+                if useHistory:
+                    ai_message_id = update_chat_history(chat_history_manager, user_id, chat_id, 
+                                        text, 
+                                        response_text, config, 
+                                        message_obj.get('id') if append_user else None, 
+                                        attachments_info_for_history if append_user else None, 
+                                        append_user=append_user)
+                
+                yield f"data: {json.dumps({'done': True, 'ai_message_id': ai_message_id, 'full_response': response_text})}\n\n"
+                
+                if speech: 
+                    worker.speak_text(response_text)
+                    
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        
+        return Response(generate_stream(), mimetype='text/event-stream', headers={
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive'
+        })
     else:
+        # For non-streaming, response_gen is already the final string
+        response_text = response_gen 
+        ai_message_id = None
         if useHistory:
-            update_chat_history(chat_history_manager, user_id, chat_id, text, response, config, messageId, attachments_info_for_history)
-            if speech: worker.speak_text(response)
-        print("Response:", response)
-        return jsonify({'response': response})
+            ai_message_id = update_chat_history(chat_history_manager, user_id, chat_id, 
+                                                text, 
+                                                response_text, config, 
+                                                message_obj.get('id') if append_user else None, 
+                                                attachments_info_for_history if append_user else None, 
+                                                append_user=append_user)
+            if speech: worker.speak_text(response_text)
+        print("Response:", response_text)
+        return jsonify({'response': response_text, 'ai_message_id': ai_message_id})
 
 @login_required
 def handle_audio_request(worker):

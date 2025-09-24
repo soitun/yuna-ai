@@ -153,36 +153,31 @@ body {
 }
 
 .message-actions {
+    display: none;
     position: absolute;
-    bottom: -28px;
+    top: 5px;
     right: 5px;
-    display: flex;
-    gap: 6px;
-    opacity: 0;
-    transition: opacity 0.2s ease, transform 0.2s ease;
-    transform: translateY(-10px);
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 4px;
+    padding: 2px;
+    gap: 2px;
+    flex-wrap: wrap;
+    max-width: 120px;
 }
 
 .message:hover .message-actions {
-    opacity: 1;
-    transform: translateY(0);
+    display: flex;
 }
 
 .action-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background-color: var(--dark-glass);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
+    background: transparent;
+    border: none;
     color: white;
-    border: 1px solid var(--light-glass-border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s ease, background-color 0.2s ease;
+    padding: 4px;
+    border-radius: 2px;
+    cursor: pointer;
     font-size: 12px;
-    padding: 0;
+    transition: background-color 0.2s;
 }
 
 .action-btn:hover {
@@ -196,6 +191,23 @@ body {
 
 .regenerate-btn:hover {
     background-color: rgba(13, 110, 253, 0.6);
+}
+
+.edit-textarea {
+    background: var(--bs-dark);
+    color: var(--bs-light);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 4px;
+    padding: 8px;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+}
+
+.edit-buttons {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
 }
 
 .modal-custom,
@@ -648,4 +660,66 @@ body.dark-mode #messageInput {
 .send-button i {
     font-size: 16px;
     margin-left: 2px;
+}
+
+/* Text file styling */
+.message-text-file {
+    background: var(--bs-dark);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 8px;
+    padding: 12px;
+    margin: 8px 0;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    max-width: 300px;
+}
+
+.message-text-file:hover {
+    background: var(--bs-secondary);
+}
+
+.text-file-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.text-file-header i {
+    color: var(--bs-primary);
+    font-size: 1.2em;
+}
+
+.text-file-name {
+    color: var(--bs-light);
+    font-size: 0.9em;
+}
+
+.text-file-preview {
+    color: var(--bs-light);
+    font-size: 0.8em;
+    opacity: 0.8;
+    font-family: monospace;
+    line-height: 1.4;
+}
+
+.text-file-content {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.text-file-content pre {
+    margin: 0;
+    background: var(--bs-dark);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 4px;
+    padding: 16px;
+    font-size: 0.9em;
+    line-height: 1.5;
+}
+
+.text-file-content code {
+    color: var(--bs-light);
+    background: transparent;
 }

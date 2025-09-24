@@ -271,17 +271,96 @@ const elements = {
 };
 
 function sendNaked() {
-    fetch(`/message`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            message: { text: elements.workArea?.value || '', data: [], id: Date.now().toString() },
-            chat: null, speech: false, kanojo: false, useHistory: false, stream: false, yunaConfig: false
+    const streamEnabled = document.getElementById('streamToggle')?.checked || false;
+    
+    if (streamEnabled) {
+        // Handle streaming for naked mode with real-time typing
+        if (elements.outputArea) {
+            elements.outputArea.value = '';
+        }
+        
+        fetch(`/message`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: { text: elements.workArea?.value || '', data: [], id: Date.now().toString() },
+                chat: null, speech: false, kanojo: false, useHistory: false, stream: true, yunaConfig: null
+            })
         })
-    })
-    .then(response => { if (!response.ok) throw new Error('Network response was not ok'); return response.json(); })
-    .then(data => { if (elements.outputArea) elements.outputArea.value = data.response; })
-    .catch(console.error);
+        .then(async response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                
+                // Keep the last incomplete line in the buffer
+                buffer = lines.pop() || '';
+                
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const jsonStr = line.slice(6).trim();
+                            if (jsonStr) {
+                                const data = JSON.parse(jsonStr);
+                                
+                                if (data.chunk) {
+                                    // Append each chunk to the existing text
+                                    if (elements.outputArea) {
+                                        elements.outputArea.value += data.chunk;
+                                        elements.outputArea.scrollTop = elements.outputArea.scrollHeight;
+                                    }
+                                }
+                                
+                                if (data.done) {
+                                    // Save the final output
+                                    if (elements.outputArea) {
+                                        localStorage.setItem('outputAreaContent', elements.outputArea.value);
+                                    }
+                                    break;
+                                }
+                                
+                                if (data.error) {
+                                    if (elements.outputArea) {
+                                        elements.outputArea.value = 'Error: ' + data.error;
+                                    }
+                                    break;
+                                }
+                            }
+                        } catch (e) {
+                            console.error('Error parsing SSE data:', e, 'Line:', line);
+                        }
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Streaming error:', error);
+            if (elements.outputArea) {
+                elements.outputArea.value = 'Error: Failed to get response';
+            }
+        });
+    } else {
+        // Handle non-streaming (existing code)
+        fetch(`/message`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: { text: elements.workArea?.value || '', data: [], id: Date.now().toString() },
+                chat: null, speech: false, kanojo: false, useHistory: false, stream: false, yunaConfig: null
+            })
+        })
+        .then(response => { if (!response.ok) throw new Error('Network response was not ok'); return response.json(); })
+        .then(data => { if (elements.outputArea) elements.outputArea.value = data.response; })
+        .catch(console.error);
+    }
 }
 
 elements.sendButton?.addEventListener('click', sendNaked);

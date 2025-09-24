@@ -20,3 +20,6 @@ static/audio/*
 lib/models/*
 llama.log
 .DS_Store
+lib/yuna-ai.csr
+lib/yuna-ai.key
+lib/yuna-ai.pem

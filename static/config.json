@@ -2,9 +2,9 @@
     "ai": {
         "names": ["Yuki", "Yuna"],
         "kokoro": false,
-        "audio": true,
+        "audio": false,
         "mind": true,
-        "hanasu": true,
+        "hanasu": false,
         "max_new_tokens": 1024,
         "context_length": 16384,
         "temperature": 0.7,
@@ -24,8 +24,8 @@
     },
     "server": {
         "url": "",
-        "yuna_default_model": ["lib/models/yuna/yuna-ai-v4-miru-loli-mlx"],
-        "voice_default_model": ["lib/models/hanasu/config.json", "lib/models/hanasu/G_46000.pth"],
+        "yuna_default_model": ["/Users/yuki/Documents/Github/mlx-vlm/YunaMiruMLX"],
+        "voice_default_model": ["lib/models/hanasu/config.json", "lib/models/hanasu/G_116000.pth"],
         "device": "mps",
         "yuna_text_mode": "mlxvlm",
         "yuna_audio_mode": "hanasu"
