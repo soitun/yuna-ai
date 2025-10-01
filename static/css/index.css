@@ -1,14 +1,15 @@
 :root {
     --primary-glass: #4DA2FF --bs-btn-active-bg: #009e8c !important;
-    --dark-glass: rgba(40, 40, 40, 0.4);
-    --light-glass: transparent;
-    --light-glass-border: rgba(255, 255, 255, 0.2);
     --dark: #0a0a0a;
     --darker: #000;
     --card: #1E1E1E;
     --yuna: #009e8c;
     --transition-speed: 0.4s;
-    --glass-blur: blur(6px) saturate(200%);
+    --glass-blur: blur(10px) saturate(200%);
+    --dark-glass: rgba(240, 240, 240, 0.2);
+    --light-glass-border: rgba(255, 255, 255, 0.1);
+    --cute-green: rgba(0, 158, 140, 0.5);
+    --cute-blue: rgba(0, 122, 255, 0.5);
 }
 
 *:not(i) {
@@ -18,22 +19,25 @@
 /* Light mode variables */
 @media (prefers-color-scheme: light) {
     :root {
-        --dark-glass: rgba(220, 220, 220, 0.4);
-        --light-glass: rgba(50, 50, 50, 0.2);
-        --light-glass-border: rgba(0, 0, 0, 0.2);
+        --dark-glass: rgba(240, 240, 240, 0.6);
+        --light-glass: rgba(255, 238, 238, 0.13);
+        --light-glass-border: rgba(0, 0, 0, 0.1);
         --dark: #f5f5f7;
         --darker: #ffffff;
         --card: #ffffff;
     }
     body {
         color: #1d1d1f;
-        background: #f5f5f7 !important;
+        /*background: #f5f5f7 !important;*/
     }
     .menu-button {
         color: #1d1d1f !important;
     }
     #messageInput {
         color: #000 !important;
+    }
+    .list-group-item {
+        background: var(--dark-glass);
     }
 }
 
@@ -49,7 +53,7 @@ body {
     background: #1E1E1E;
     color: #f5f5f7;
     font-family: 'yukiarimo', sans-serif;
-    background-image: url('/static/img/yuna-girl.webp');
+    /*background-image: url('/static/img/yuna-girl.webp');*/
     background-size: fit;
     background-position: center;
     background-repeat: no-repeat;
@@ -83,7 +87,7 @@ body {
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    background: var(--dark-glass);
+    background: rgba(255, 255, 255, 0.2);
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
     border: 1px solid var(--light-glass-border);
@@ -96,11 +100,7 @@ body {
 
 .menu-button:hover {
     transform: scale(1.1);
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 0 10px rgba(150, 201, 255, 0.055),
-        inset 0 0 5px rgba(255, 255, 255, 0.3);
     transition: transform var(--transition-speed) cubic-bezier(0.25, 1, 0.5, 1),
-        background-color var(--transition-speed) ease,
         box-shadow var(--transition-speed) ease;
 }
 
@@ -113,13 +113,12 @@ body {
     top: 20px;
     left: 20px;
     transition: transform var(--transition-speed);
-    z-index: 1000;
+    z-index: 1050; /* Sits below the sliding panel */
 }
 
 .chat-container {
     max-width: 1200px;
-    margin: 100px auto 120px;
-    /* Increased bottom margin */
+    margin: 100px auto 150px; /* Increased bottom margin for new input */
     padding: 20px;
 }
 
@@ -130,23 +129,23 @@ body {
     border-radius: 22px;
     animation: fadeIn 0.5s ease-out;
     position: relative;
+    background: var(--dark-glass);
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 0 10px 0px rgba(255, 255, 255, 0.2) inset, 0 0 10px 2px rgba(0, 0, 0, 0.2) inset;
+    border: 1px solid var(--light-glass-border);
+    /* Softer outer shadow + inner highlight for 3D glass edge effect */
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 0 1px 1px rgba(255, 255, 255, 0.05);
 }
 
 .message-user {
-    background: rgba(0, 158, 140, 0.8);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
+    background: var(--cute-blue);
     margin-left: auto;
     border-radius: 22px 22px 5px 22px;
     white-space: pre-line;
 }
 
 .message-ai {
-    background: rgba(80, 80, 80, 0.4);
+    background: var(--cute-green);
     margin-right: auto;
     border-radius: 22px 22px 22px 5px;
     white-space: pre-line;
@@ -158,11 +157,15 @@ body {
     top: 5px;
     right: 5px;
     background: rgba(0, 0, 0, 0.8);
-    border-radius: 4px;
+    border-radius: 16px;
     padding: 2px;
     gap: 2px;
     flex-wrap: wrap;
     max-width: 120px;
+    background: var(--dark-glass);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--light-glass-border);
 }
 
 .message:hover .message-actions {
@@ -217,30 +220,178 @@ body {
     -webkit-backdrop-filter: blur(40px);
     border-radius: 24px;
     border: 1px solid var(--light-glass-border);
+    overflow: hidden;
+}
+
+.call-top-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 10;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
 }
 
 .call-container {
-    display: flex;
+    position: absolute;
+    top: 0; left: 0;
     width: 100%;
     height: 100%;
-    position: relative;
-    padding: 20px;
-}
-
-.video-frame {
-    flex: 1;
-    background: var(--dark);
-    border-radius: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     overflow: hidden;
-    margin: 10px;
-    position: relative;
 }
 
-.video-frame img,
-.video-frame video {
+.call-background-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transform: scale(1.05); /* Slightly zoomed in for effect */
+    filter: blur(5px) brightness(0.8);
+}
+
+.video-frame-user {
+    position: absolute;
+    bottom: 140px; /* Position above controls */
+    right: 30px;
+    width: 150px;
+    height: 150px;
+    border-radius: 24px; /* Perfect circle */
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+    overflow: hidden;
+    background: #111;
+    z-index: 5;
+    transition: transform 0.3s ease;
+    cursor: grab;
+}
+.video-frame-user:active {
+    cursor: grabbing;
+    transform: scale(1.05);
+}
+
+.video-frame-user video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.video-frame-user video.flip-horizontal {
+    transform: scaleX(-1);
+}
+
+.call-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    z-index: 10;
+    background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+}
+
+.controls-bar {
+    position: static; /* No longer absolute */
+    transform: none;
+    padding: 12px;
+    border-radius: 35px; /* Fuller capsule */
+    gap: 12px;
+}
+
+.control-button {
+    width: 55px;
+    height: 55px;
+    font-size: 20px;
+    border: 1px solid var(--light-glass-border);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.record-button {
+    width: 70px; /* Larger main button */
+    height: 70px;
+    font-size: 28px;
+    background: var(--yuna) !important;
+    position: relative;
+}
+
+.record-button.recording::before {
+    content: '';
+    position: absolute;
+    top: -8px; left: -8px; right: -8px; bottom: -8px;
+    border-radius: 50%;
+    border: 3px solid var(--yuna);
+    animation: pulse 1.5s infinite;
+}
+
+#photoCaptureButton.pending {
+    animation: pulse 1.5s infinite;
+}
+
+.end-call-button {
+    background: #dc3545 !important;
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.95); opacity: 0.7; }
+    70% { transform: scale(1.1); opacity: 0; }
+    100% { transform: scale(0.95); opacity: 0; }
+}
+
+.floating-video-window {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 220px; /* Slightly larger */
+    height: 220px;
+    background: #111;
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 3px solid var(--light-glass-border);
+    border-radius: 24px; /* Rounded square */
+    display: none;
+    z-index: 1060;
+    overflow: hidden;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+    cursor: grab;
+    display: none;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.floating-video-window.active {
+    display: flex; /* Changed from block */
+}
+
+.floating-video-window video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+}
+
+/* New control bar for the floating window */
+.floating-controls {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px;
+    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+}
+
+.floating-controls .control-button {
+    width: 35px;
+    height: 35px;
+    font-size: 16px;
 }
 
 .controls-bar {
@@ -263,12 +414,13 @@ body {
     height: 45px;
     border-radius: 50%;
     border: none;
-    background: var(--light-glass);
+    background: var(--dark-glass);
     color: white;
     transition: transform var(--transition-speed), background-color var(--transition-speed);
     display: flex;
     align-items: center;
     justify-content: center;
+
 }
 
 .control-button:hover {
@@ -276,7 +428,7 @@ body {
     background: rgba(255, 255, 255, 0.3);
 }
 
-.diary-card {
+.diary-card, .accordion-body {
     background: var(--dark-glass);
     border-radius: 20px;
     padding: 20px;
@@ -284,26 +436,44 @@ body {
     border: 1px solid var(--light-glass-border);
 }
 
+.accordion-button {
+    background: var(--dark-glass);
+    border: 1px solid var(--light-glass-border);
+    color: #f5f5f7;
+    font-weight: 600;
+    border-radius: 15px;
+    margin-bottom: 10px;
+}
+
+#work-area {
+    resize: horizontal;
+}
+
+/* --- POPUP PANEL ANIMATION FIX --- */
 .popup-panel {
     position: fixed;
     top: 0;
-    right: -100vw;
-    /* Use vw for full viewport width */
+    right: 0;
     width: 100%;
     max-width: 100%;
     height: 100vh;
-    background: rgba(25, 25, 25, 0.5);
+    background: rgba(25, 25, 25, 0.6); /* Slightly more opaque */
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
-    transition: transform var(--transition-speed) cubic-bezier(0.25, 1, 0.5, 1);
+    transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1); /* Slower, bouncier animation */
     padding: 20px;
-    z-index: 1050;
+    z-index: 1060; /* Highest z-index to slide over everything */
     overflow-y: auto;
     border-left: 1px solid var(--light-glass-border);
+    transform: translateX(100%);
+    will-change: transform;
+}
+@media (max-width: 600px) {
+    .popup-panel { max-width: 100%; }
 }
 
 .popup-panel.active {
-    transform: translateX(-100%);
+    transform: translateX(0);
 }
 
 .overlay {
@@ -331,7 +501,6 @@ body {
         opacity: 0;
         transform: translateY(10px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
@@ -360,15 +529,6 @@ body {
 
 .floating-audio-window .controls-bar {
     justify-content: flex-end;
-}
-
-.send-button {
-    background: var(--primary-glass);
-    color: white;
-}
-
-.send-button:hover {
-    background: rgba(0, 122, 255, 1);
 }
 
 .close-button {
@@ -520,16 +680,11 @@ body {
 /* Styling for the chat history list */
 #chatList {
     --bs-list-group-bg: transparent;
-    /* Remove default Bootstrap background */
-    --bs-list-group-border-color: transparent;
-    /* Remove default Bootstrap border */
     border-radius: 20px;
     overflow: hidden;
-    /* Ensures child elements respect the border-radius */
 }
 
 .list-group-item {
-    background: var(--dark-glass);
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
     color: #f5f5f7;
@@ -540,16 +695,11 @@ body {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     position: relative;
     overflow: hidden;
-    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--light-glass-border);
 }
 
-/* Remove the default separator lines */
 .list-group-item+.list-group-item {
-    border-top-width: 1px;
-}
-
-.list-group-item:last-child {
-    margin-bottom: 0;
+    border-top-width: 0;
 }
 
 .chat-name {
@@ -563,7 +713,6 @@ body {
     left: 50%;
     width: 200%;
     padding-bottom: 200%;
-    /* Maintain aspect ratio */
     background-image: radial-gradient(circle, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0) 50%);
     border-radius: 50%;
     transform: translate(-50%, -50%) scale(0);
@@ -579,88 +728,87 @@ body {
     transition: transform 0.4s ease-out, opacity 0.4s ease-out;
 }
 
-/* Ensure content is above the pseudo-element */
 .list-group-item>* {
     position: relative;
     z-index: 1;
 }
 
+/* === INPUT AREA REDESIGN === */
 .input-area {
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
-    padding: 8px 10px 30px 10px;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
+    padding: 15px 10px 25px 10px;
+    z-index: 1000; /* Sits below panels */
 }
 
-.input-area .input-group {
-    width: 100%;
+.input-group {
+    position: relative;
+    max-width: 800px;
+    margin: 0 auto;
     display: flex;
-    align-items: center;
-    transition: background-color 0.3s ease;
-    position: fixed;
-    z-index: 1050;
-    overflow-y: auto;
+    align-items: flex-end; /* Align buttons to the bottom */
+    background: var(--dark-glass);
+    border-radius: 28px;
+    border: 1px solid var(--light-glass-border);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 0 1px 1px rgba(255, 255, 255, 0.05);
+    padding: 6px;
+    background-color: rgba(50, 50, 50, 0.5);
 }
 
-/* Style for when the app is in dark mode */
-body.dark-mode .input-area .input-group {
-    background: rgba(40, 40, 40, 0.7);
+.attach-button-wrapper, .send-button-wrapper {
+    flex-shrink: 0;
+    padding: 4px;
 }
 
 #messageInput {
     flex-grow: 1;
-    /* Allow it to take up the remaining space */
     border: none;
     background: transparent;
-    color: #000;
-    /* Black text for light mode */
-    font-size: 17px;
-    padding: 8px 12px;
+    color: #f5f5f7;
+    font-size: 16px;
+    padding: 8px 10px;
     outline: none;
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
+    resize: none;
+    line-height: 24px;
+    box-shadow: none !important;
+    min-height: 48px;
+    max-height: 128px; /* Approx 5 lines (5 * 24px + padding) */
+    overflow-y: auto;
 }
 
-body.dark-mode #messageInput {
-    color: #fff;
-}
-
-/* Placeholder text color */
 #messageInput::placeholder {
-    color: #8e8e93;
+    color: rgba(245, 245, 247, 0.6);
+}
+
+.attach-button {
+    width: 40px !important;
+    height: 40px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    font-size: 18px;
+}
+
+.attach-button.has-attachments {
+    background: var(--yuna) !important;
+    color: white;
 }
 
 .send-button {
-    width: 38px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.2) !important;
-    color: #333;
-    border: none;
-    transition: transform 0.2s ease, background-color 0.2s ease;
-    flex-shrink: 0;
-    border-top-right-radius: 50% !important;
-    border-bottom-right-radius: 50% !important;
-    border-top-left-radius: 50% !important;
-    border-bottom-left-radius: 50% !important;
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
+    width: 40px !important;
+    height: 40px !important;
+    background: var(--yuna) !important;
+    background-image: linear-gradient(45deg, var(--yuna), #00c6a7) !important;
+    color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
-.send-button.visible {
-    transform: scale(1);
-    opacity: 1;
+.send-button i, .attach-button i {
+    font-size: 20px;
 }
-
-.send-button i {
-    font-size: 16px;
-    margin-left: 2px;
-}
+/* === END INPUT AREA REDESIGN === */
 
 /* Text file styling */
 .message-text-file {

@@ -20,8 +20,8 @@
     <link rel="stylesheet" href="/static/css/bootstrap.min.css" rel="preload" as="style" media="all">
     <link rel="stylesheet" href="/static/css/bootstrap-icons.css">
     <link rel="stylesheet" href="/static/css/index.css">
-    <script src="/static/js/index.js" defer></script>
     <script src="/static/js/history.js" defer></script>
+    <script src="/static/js/index.js" defer></script>
     <script src="/static/js/markdown.js" defer></script>
     <script src="/static/js/himitsu.js" defer></script>
     <script>
@@ -61,9 +61,7 @@
         <button class="menu-button" onclick="showCallModal()" aria-label="Call">
             <i class="bi-telephone"></i>
         </button>
-        <button class="menu-button attach-button" aria-label="Attach">
-            <i class="bi-paperclip"></i>
-        </button>
+        <!-- ATTACH BUTTON IS NO LONGER HERE -->
     </div>
 
     <!-- Overlay -->
@@ -85,11 +83,18 @@
     <!-- Input Area -->
     <div class="input-area">
         <div class="input-group">
+            <div class="attach-button-wrapper">
+                 <button class="menu-button attach-button" aria-label="Attach">
+                    <i class="bi-paperclip"></i>
+                </button>
+            </div>
             <textarea type="text" class="form-control" placeholder="Message Yuna..." aria-label="Message Yuna"
-                id="messageInput"></textarea>
-            <button class="btn menu-button send-button" aria-label="Send" onclick="messageManagerInstance.sendMessage()">
-                <i class="bi-send"></i>
-            </button>
+                id="messageInput" rows="1"></textarea>
+            <div class="send-button-wrapper">
+                 <button class="menu-button send-button" aria-label="Send" onclick="messageManagerInstance.sendMessage()">
+                    <i class="bi-send"></i>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -338,7 +343,7 @@
     <div id="historyPanel" class="popup-panel">
         <button class="close-button" onclick="togglePanel('history')">&times;</button>
         <h4 class="mb-4">Chat History</h4>
-        <button id="createChatButton" class="btn btn-sm btn-success mb-2">Create New Chat</button>
+        <button id="createChatButton" class="btn btn-sm btn-success mb-2" onclick="createNewChat()">Create New Chat</button>
         <ul id="chatList" class="list-group">
             <!-- Chats will be dynamically populated here -->
         </ul>
@@ -380,43 +385,65 @@
         </div>
     </div>
 
-    <!-- Updated Call Modal -->
+    <!-- Create Chat Modal -->
+    <div class="modal fade" id="createChatModal" tabindex="-1" aria-labelledby="createChatModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createChatModalLabel">Create New Chat</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="newChatNameInput" class="form-label">Chat Name</label>
+                    <input type="text" class="form-control" id="newChatNameInput" placeholder="new_chat.json">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmCreateChatButton">Create</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call Modal -->
     <div class="modal fade" id="callModal" tabindex="-1" aria-labelledby="callModalLabel" aria-hidden="true"
         data-bs-backdrop="static" data-bs-keyboard="false">
         <div class="modal-dialog modal-fullscreen modal-dialog-centered">
             <div class="modal-content modal-custom">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title" id="callModalLabel">Call with Yuna</h5>
-                    <!-- This button will now switch to the audio window -->
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
-                        onclick="switchToAudio()"></button>
-                </div>
-                <div class="call-container" id="callContainer-modal"> <!-- Renamed to avoid conflicts -->
-                    <div class="video-frame">
-                        <img src="/static/img/yuna-girl.webp" alt="Yuna Call" class="w-100 h-100 object-fit-cover">
-                    </div>
-                    <div class="video-frame">
+                <!-- Main container for the call background and overlays -->
+                <div class="call-container" id="callContainer-modal">
+                    <!-- Yuna's video/image as the main background -->
+                    <img src="/static/img/yuna-girl.webp" alt="Yuna Call" class="call-background-image">
+
+                    <!-- Adorable, draggable user video bubble -->
+                    <div id="userVideoFrame" class="video-frame-user">
                         <video id="localVideo" class="w-100 h-100" muted autoplay></video>
                     </div>
+
+                    <!-- Overlay for controls and status -->
+                    <div class="call-overlay">
+                        <div class="controls-bar">
+                            <button class="control-button" aria-label="Mute/Unmute Microphone"><i class="bi-mic"></i></button>
+                            <button class="control-button" aria-label="Start/Stop Video"><i class="bi-camera-video"></i></button>
+
+                            <!-- The main, adorable record button -->
+                            <button id="recordButton" class="control-button record-button" aria-label="Start Recording">
+                                <i class="bi bi-mic-fill"></i>
+                            </button>
+
+                            <button class="control-button end-call-button" aria-label="End Call"
+                                onclick="callManagerInstance.endCall()">
+                                <i class="bi-telephone-fill"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
-                <div id="callStatus" class="call-status-display">
-                    Click the microphone to speak
-                </div>
-
-                <div class="controls-bar">
-                    <button class="control-button" aria-label="Mute/Unmute Microphone"><i class="bi-mic-mute"></i></button>
-                    <button class="control-button" aria-label="Start/Stop Video"><i class="bi-camera-video"></i></button>
-
-                    <!-- The ONE record button for the main modal -->
-                    <button id="recordButton" class="control-button record-button" aria-label="Start Recording">
-                        <i class="bi bi-mic-fill"></i>
-                    </button>
-
-                    <button class="control-button" style="background: #dc3545;" aria-label="End Call"
-                        onclick="callManagerInstance.endCall()">
-                        <i class="bi-telephone-fill"></i>
-                    </button>
+                <!-- Top bar for title and windowing button -->
+                <div class="modal-header border-0 call-top-bar">
+                    <h5 class="modal-title" id="callModalLabel">Yuna</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+                        onclick="switchToFloatingVideo()"></button>
                 </div>
             </div>
         </div>

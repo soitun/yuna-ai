@@ -1,6 +1,7 @@
 config_data = {
     "ai": {
         "names": ["Yuki", "Yuna"],
+        "bos": ["<|endoftext|>", true],
         "kokoro": false,
         "miru": false,
         "audio": false,
@@ -44,6 +45,28 @@ config_data = {
     }
 };
 
+// This function shows the Bootstrap modal instead of a prompt
+function createNewChat() {
+    const modalEl = document.getElementById('createChatModal');
+    if (!modalEl) return;
+
+    // Close the side panel for a cleaner UI
+    if (typeof closeAllPanels === 'function') {
+        closeAllPanels();
+    }
+
+    const chatModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    const inputEl = document.getElementById('newChatNameInput');
+
+    // Set a default value and focus the input
+    if(inputEl) {
+        inputEl.value = 'new_chat.json';
+        inputEl.focus();
+    }
+
+    chatModal.show();
+}
+
 // ChatHistoryManager Implementation
 class ChatHistoryManager {
     constructor() {
@@ -74,10 +97,7 @@ class ChatHistoryManager {
     }
 
     // Add a new chat/history file
-    async createHistoryFile() {
-        const newFileName = prompt('Enter a name for the new file (with .json):');
-        if (!newFileName) return;
-
+    async createHistoryFile(newFileName) {
         try {
             await this.postHistory('create', { chat: newFileName });
             await populateHistorySelect();
@@ -180,10 +200,31 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load initial chat list
     populateHistorySelect();
 
-    // Bind create button if exists
-    const createChatButton = document.getElementById('createChatButton');
-    if (createChatButton) {
-        createChatButton.addEventListener('click', () => chatHistoryManagerInstance.createHistoryFile());
+    // Set up the event listener for the new modal's "Create" button
+    const confirmButton = document.getElementById('confirmCreateChatButton');
+    const inputEl = document.getElementById('newChatNameInput');
+    const modalEl = document.getElementById('createChatModal');
+
+    if (confirmButton && inputEl && modalEl) {
+        const chatModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+        const handleCreate = () => {
+            const newFileName = inputEl.value.trim();
+            if (newFileName) {
+                chatHistoryManagerInstance.createHistoryFile(newFileName);
+                chatModal.hide();
+            }
+        };
+
+        confirmButton.addEventListener('click', handleCreate);
+
+        // Also allow submission with the Enter key
+        inputEl.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleCreate();
+            }
+        });
     }
 });
 

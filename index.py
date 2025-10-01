@@ -320,7 +320,7 @@ def handle_message_request(worker, chat_history_manager, config):
     chat_history = chat_history_manager.load_chat_history(user_id, chat_id)
 
     append_user = True
-    
+
     if regenerate:
         idx = next((i for i, m in enumerate(chat_history) if m.get('id') == messageId), -1)
         if idx != -1:
@@ -340,7 +340,7 @@ def handle_message_request(worker, chat_history_manager, config):
 
     processed_text = text
     image_paths_for_vlm = []
-    attachments_info_for_history = [] 
+    attachments_info_for_history = []
 
     if attachments:
         upload_dir = os.path.join('static', 'img', 'call')
@@ -397,42 +397,42 @@ def handle_message_request(worker, chat_history_manager, config):
             ai_message_id = None
             try:
                 # *** FIX HERE: We iterate over the generator instance ***
-                for chunk in response_gen: 
+                for chunk in response_gen:
                     response_text += chunk
                     yield f"data: {json.dumps({'chunk': chunk})}\n\n"
-                
+
                 if useHistory:
-                    ai_message_id = update_chat_history(chat_history_manager, user_id, chat_id, 
-                                        text, 
-                                        response_text, config, 
-                                        message_obj.get('id') if append_user else None, 
-                                        attachments_info_for_history if append_user else None, 
+                    ai_message_id = update_chat_history(chat_history_manager, user_id, chat_id,
+                                        text,
+                                        response_text, config,
+                                        message_obj.get('id') if append_user else None,
+                                        attachments_info_for_history if append_user else None,
                                         append_user=append_user)
-                
+
                 yield f"data: {json.dumps({'done': True, 'ai_message_id': ai_message_id, 'full_response': response_text})}\n\n"
-                
-                if speech: 
+
+                if speech:
                     worker.speak_text(response_text)
-                    
+
             except Exception as e:
                 import traceback
                 traceback.print_exc()
                 yield f"data: {json.dumps({'error': str(e)})}\n\n"
-        
+
         return Response(generate_stream(), mimetype='text/event-stream', headers={
             'Cache-Control': 'no-cache',
             'Connection': 'keep-alive'
         })
     else:
         # For non-streaming, response_gen is already the final string
-        response_text = response_gen 
+        response_text = response_gen
         ai_message_id = None
         if useHistory:
-            ai_message_id = update_chat_history(chat_history_manager, user_id, chat_id, 
-                                                text, 
-                                                response_text, config, 
-                                                message_obj.get('id') if append_user else None, 
-                                                attachments_info_for_history if append_user else None, 
+            ai_message_id = update_chat_history(chat_history_manager, user_id, chat_id,
+                                                text,
+                                                response_text, config,
+                                                message_obj.get('id') if append_user else None,
+                                                attachments_info_for_history if append_user else None,
                                                 append_user=append_user)
             if speech: worker.speak_text(response_text)
         print("Response:", response_text)
@@ -498,4 +498,4 @@ def handle_call_request(worker, chat_history_manager, config):
     })
 
 app = YunaServer().app
-if __name__ == '__main__': app.run(host='0.0.0.0', port=4848, ssl_context=('lib/yuna-ai.pem', 'lib/yuna-ai.key'))
+if __name__ == '__main__': app.run(host='0.0.0.0', port=4848, ssl_context=('lib/yuna-ai.pem', 'lib/yuna-ai.key'), debug=True, threaded=True)

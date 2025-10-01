@@ -248,7 +248,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     kanojoManagerInstance.kanojos = {...kanojoManagerInstance.kanojos, ...data};
                     kanojoManagerInstance.saveKanojos();
                     populateKanojoSelect();
-                    alert('Import successful');
                 } catch (err) {
                     alert('Failed to import: ' + err.message);
                 }
@@ -272,13 +271,13 @@ const elements = {
 
 function sendNaked() {
     const streamEnabled = document.getElementById('streamToggle')?.checked || false;
-    
+
     if (streamEnabled) {
         // Handle streaming for naked mode with real-time typing
         if (elements.outputArea) {
             elements.outputArea.value = '';
         }
-        
+
         fetch(`/message`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -289,28 +288,28 @@ function sendNaked() {
         })
         .then(async response => {
             if (!response.ok) throw new Error('Network response was not ok');
-            
+
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let buffer = '';
-            
+
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
-                
+
                 buffer += decoder.decode(value, { stream: true });
                 const lines = buffer.split('\n');
-                
+
                 // Keep the last incomplete line in the buffer
                 buffer = lines.pop() || '';
-                
+
                 for (const line of lines) {
                     if (line.startsWith('data: ')) {
                         try {
                             const jsonStr = line.slice(6).trim();
                             if (jsonStr) {
                                 const data = JSON.parse(jsonStr);
-                                
+
                                 if (data.chunk) {
                                     // Append each chunk to the existing text
                                     if (elements.outputArea) {
@@ -318,7 +317,7 @@ function sendNaked() {
                                         elements.outputArea.scrollTop = elements.outputArea.scrollHeight;
                                     }
                                 }
-                                
+
                                 if (data.done) {
                                     // Save the final output
                                     if (elements.outputArea) {
@@ -326,7 +325,7 @@ function sendNaked() {
                                     }
                                     break;
                                 }
-                                
+
                                 if (data.error) {
                                     if (elements.outputArea) {
                                         elements.outputArea.value = 'Error: ' + data.error;
