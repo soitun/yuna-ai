@@ -3,9 +3,9 @@
         "names": ["Yuki", "Yuna"],
         "bos": ["<|endoftext|>", true],
         "kokoro": false,
-        "audio": true,
-        "mind": true,
-        "hanasu": true,
+        "audio": false,
+        "mind": false,
+        "hanasu": false,
         "max_new_tokens": 1024,
         "context_length": 16384,
         "temperature": 0.8,
@@ -25,20 +25,17 @@
     },
     "server": {
         "url": "",
-        "yuna_default_model": ["/Users/yuki/Downloads/yuna-main/mlx-vlm/Yuna-2B-mlx"],
+        "yuna_default_model": ["/Users/yuki/Documents/Github/aiflow/aiflow/models/yuna_mlx/mergedmlx"],
         "voice_default_model": ["lib/models/hanasu/config.json", "lib/models/hanasu/G_50000.pth"],
         "device": "mps",
-        "yuna_text_mode": "mlxvlm",
+        "yuna_text_mode": "yunamlx",
         "yuna_audio_mode": "hanasu"
     },
     "settings": {
-        "fuctions": true,
         "use_history": true,
         "customConfig": true,
         "sounds": true,
-        "background_call": true,
         "streaming": true,
-        "default_history_file": "history_template:general.json",
-        "default_kanojo": "Yuna"
+        "default_history_file": "history_template:general.json"
     }
 }

@@ -17,20 +17,19 @@
     </script>
     <link rel="icon" type="image/jpeg" sizes="60x60" href="/static/img/yuna-ai.png">
     <link rel="manifest" href="/static/manifest.json">
-    <link rel="stylesheet" href="/static/css/bootstrap.min.css" rel="preload" as="style" media="all">
-    <link rel="stylesheet" href="/static/css/bootstrap-icons.css">
     <link rel="stylesheet" href="/static/css/index.css">
     <script src="/static/js/history.js" defer></script>
     <script src="/static/js/index.js" defer></script>
-    <script src="/static/js/markdown.js" defer></script>
     <script src="/static/js/himitsu.js" defer></script>
+    <script src="/static/js/hanasu.js" defer></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function () {
                 navigator.serviceWorker.register('/static/sw.js', {
                     scope: '/'
                 }).then(function (registration) {
-                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    console.log('ServiceWorker registration successful with scope: ', registration
+                        .scope);
                 }).catch(function (err) {
                     console.log('ServiceWorker registration failed: ', err);
                     // Don't show error to user, just log it
@@ -40,6 +39,8 @@
                 });
             });
         }
+
+        const $ = id => document.getElementById(id);
     </script>
 </head>
 
@@ -47,21 +48,68 @@
     <!-- Yuna Avatar -->
     <img src="/static/img/yuna-ai.png" class="yuna-avatar" alt="Yuna Ai" onclick="toggleFloatingMenu()">
 
-    <!-- Top Menu -->
-    <div class="top-menu" id="floatingMenu">
+    <!-- Top Menu - Added classy-surface -->
+    <div class="top-menu glassy-surface" id="floatingMenu">
         <button class="menu-button" onclick="togglePanel('kanojo')" aria-label="Kanojo">
-            <i class="bi-person"></i>
-        </button>
-        <button class="menu-button" onclick="togglePanel('history')" aria-label="History">
-            <i class="bi-clock-history"></i>
+            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                viewBox="0 0 7.30469 7.15332" width="1em" height="1em">
+                <g>
+                    <rect height="7.15332" opacity="0" width="7.30469" x="0" y="0"></rect>
+                    <path
+                        d="M1.00586 7.14844L5.73242 7.14844C6.41602 7.14844 6.73828 6.94824 6.73828 6.50879C6.73828 5.50293 5.46875 4.0332 3.36914 4.0332C1.27441 4.0332 0 5.50293 0 6.50879C0 6.94824 0.327148 7.14844 1.00586 7.14844ZM0.786133 6.48926C0.732422 6.48926 0.703125 6.47461 0.703125 6.4209C0.703125 5.84961 1.64062 4.69238 3.36914 4.69238C5.09766 4.69238 6.03516 5.84961 6.03516 6.4209C6.03516 6.47461 6.00586 6.48926 5.95215 6.48926ZM3.36914 3.58398C4.29199 3.58398 5.04883 2.75879 5.04883 1.76758C5.04883 0.776367 4.30176 0 3.36914 0C2.44629 0 1.68945 0.791016 1.68945 1.77734C1.68945 2.76367 2.45117 3.58398 3.36914 3.58398ZM3.36914 2.92969C2.85156 2.92969 2.39258 2.41699 2.39258 1.77734C2.39258 1.1377 2.83691 0.65918 3.36914 0.65918C3.90625 0.65918 4.3457 1.12793 4.3457 1.76758C4.3457 2.40723 3.89648 2.92969 3.36914 2.92969Z"
+                        fill="black" fill-opacity="0.85"></path>
+                </g>
+            </svg>
         </button>
         <button class="menu-button" onclick="togglePanel('himitsu')" aria-label="Himitsu">
-            <i class="bi-star"></i>
+            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                viewBox="0 0 9.16037 8.77441" width="1em" height="1em">
+                <g>
+                    <rect height="8.77441" opacity="0" width="9.16037" x="0" y="0"></rect>
+                    <path
+                        d="M1.64561 8.13965C1.82628 8.27637 2.046 8.22266 2.30968 8.03223L4.29698 6.57227L6.28917 8.03223C6.54796 8.22266 6.76768 8.27637 6.94835 8.13965C7.12413 8.00781 7.15831 7.7832 7.05089 7.48047L6.26475 5.1416L8.27159 3.70117C8.53526 3.52051 8.64757 3.32031 8.57432 3.10547C8.50597 2.90039 8.30089 2.79785 7.97862 2.80273L5.51768 2.82227L4.77061 0.46875C4.67296 0.161133 4.52159-8.88178e-16 4.29698-8.88178e-16C4.07725-8.88178e-16 3.92589 0.161133 3.82335 0.46875L3.07628 2.82227L0.61534 2.80273C0.293075 2.79785 0.0928794 2.90039 0.0196372 3.10547C-0.0487222 3.32031 0.0635825 3.52051 0.322372 3.70117L2.32921 5.1416L1.54307 7.48047C1.43565 7.7832 1.46983 8.00781 1.64561 8.13965ZM2.28526 7.26562C2.28038 7.25586 2.28038 7.25098 2.28526 7.23145L3.03233 5.12207C3.08604 4.96094 3.05675 4.83398 2.91026 4.73145L1.06456 3.47168C1.04991 3.45703 1.04503 3.45215 1.04991 3.44238C1.05479 3.43262 1.05968 3.43262 1.07921 3.43262L3.31554 3.48145C3.48643 3.48633 3.59386 3.41797 3.64757 3.24707L4.27745 1.10352C4.28233 1.08398 4.28722 1.0791 4.29698 1.0791C4.30675 1.0791 4.31163 1.08398 4.31651 1.10352L4.94639 3.24707C5.00011 3.41797 5.11241 3.48633 5.28331 3.48145L7.51475 3.43262C7.53429 3.43262 7.53917 3.43262 7.54405 3.44238C7.54893 3.45215 7.54405 3.45703 7.5294 3.47168L5.6837 4.73145C5.53722 4.83398 5.50792 4.96094 5.56651 5.12207L6.3087 7.23145C6.31358 7.25098 6.31358 7.25586 6.3087 7.26562C6.30382 7.27539 6.29405 7.26562 6.2794 7.25586L4.50694 5.89355C4.37511 5.78613 4.22374 5.78613 4.08702 5.89355L2.31944 7.25586C2.30479 7.26562 2.29503 7.27539 2.28526 7.26562Z"
+                        fill="black" fill-opacity="0.85"></path>
+                </g>
+            </svg>
+        </button>
+        <button class="menu-button" onclick="togglePanel('yunaSearch')" aria-label="Search">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
+                <path
+                    d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
+            </svg>
+        </button>
+        <button class="menu-button" onclick="togglePanel('hanasuReader')" aria-label="Hanasu Reader">
+            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                viewBox="0 0 8.77441 9.73338" width="1em" height="1em">
+                 <g>
+                     
+                    <rect height="9.73338" opacity="0" width="8.77441" x="0" y="0" />
+                     
+                    <path
+                        d="M7.63672 2.44725L7.63672 8.05272C7.63672 8.88768 7.23145 9.29784 6.41113 9.29784L3.7624 9.29784C4.37437 9.19924 5.01815 9.05516 5.76172 8.83397C6.57715 8.58007 6.92383 8.05761 6.92383 7.11034L6.92383 1.63671C6.92383 1.50496 6.91461 1.38032 6.89494 1.26468C7.39139 1.40683 7.63672 1.80142 7.63672 2.44725Z"
+                        fill="white" fill-opacity="0.85" />
+                     
+                    <path
+                        d="M0.571289 7.90624C0.571289 8.62401 1.00586 8.98534 1.77246 8.93651C3.05176 8.85839 4.10645 8.73143 5.5957 8.2871C6.15723 8.1162 6.35254 7.81835 6.35254 7.11034L6.35254 1.63671C6.35254 0.821278 5.92773 0.420887 5.13672 0.6162C4.10645 0.865223 3.05176 1.06542 1.65039 1.15819C1.00586 1.20702 0.571289 1.57811 0.571289 2.31542ZM1.27441 7.77929L1.27441 2.29589C1.27441 1.98339 1.46973 1.87108 1.7334 1.85155C3.06641 1.76854 4.0918 1.56835 5.09766 1.32421C5.44922 1.23632 5.64941 1.42675 5.64941 1.76854L5.64941 7.08104C5.64941 7.43261 5.55176 7.58397 5.26855 7.6621C4.0918 8.02831 3.06641 8.15526 1.80176 8.2285C1.46973 8.24804 1.27441 8.0869 1.27441 7.77929Z"
+                        fill="white" fill-opacity="0.85" />
+                     
+                    <path
+                        d="M2.06543 3.19432C3.1543 3.11132 4.00391 2.9453 4.86328 2.74999C5.05859 2.70604 5.10254 2.60839 5.10254 2.48632C5.10254 2.35448 5 2.24218 4.80957 2.28612C4.00391 2.47167 3.1543 2.6328 2.06543 2.71581C1.89941 2.73046 1.82129 2.833 1.82129 2.95995C1.82129 3.09667 1.92383 3.20409 2.06543 3.19432ZM2.06543 4.3955C3.1543 4.31249 4.00391 4.15136 4.86328 3.95604C5.05859 3.9121 5.10254 3.80956 5.10254 3.69237C5.10254 3.56054 5 3.44823 4.80957 3.48729C4.00391 3.67284 3.1543 3.83886 2.06543 3.92186C1.89941 3.93651 1.82129 4.03905 1.82129 4.166C1.82129 4.30272 1.92383 4.40526 2.06543 4.3955ZM2.06543 5.60155C3.1543 5.51854 4.00391 5.35741 4.86328 5.1621C5.05859 5.11327 5.10254 5.01561 5.10254 4.89843C5.10254 4.76659 5 4.6494 4.80957 4.69335C4.00391 4.87889 3.1543 5.04003 2.06543 5.12304C1.89941 5.13768 1.82129 5.24511 1.82129 5.37206C1.82129 5.50878 1.92383 5.61132 2.06543 5.60155ZM2.06543 6.80272C2.71484 6.75878 3.12988 6.70018 3.52051 6.63182C3.66211 6.60253 3.73535 6.49022 3.73535 6.3828C3.73535 6.25097 3.63281 6.12889 3.4375 6.16796C3.10059 6.22655 2.7002 6.28514 2.06543 6.32421C1.89941 6.33886 1.82129 6.44139 1.82129 6.57323C1.82129 6.70995 1.92383 6.81249 2.06543 6.80272Z"
+                        fill="white" fill-opacity="0.85" />
+                     </g>
+            </svg>
         </button>
         <button class="menu-button" onclick="showCallModal()" aria-label="Call">
-            <i class="bi-telephone"></i>
+            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                viewBox="0 0 8.18359 7.61261" width="1em" height="1em">
+                <g>
+                    <rect height="7.61261" opacity="0" width="8.18359" x="0" y="0"></rect>
+                    <path
+                        d="M5.6543 7.61246C6.35254 7.61246 6.79199 7.43179 7.17773 6.98257C7.21191 6.94839 7.24609 6.90933 7.28027 6.87027C7.50977 6.61148 7.61719 6.35757 7.61719 6.11343C7.61719 5.82535 7.44141 5.53726 7.0752 5.28336L6.10352 4.61929C5.7959 4.40445 5.54199 4.39957 5.15625 4.58511L4.56543 4.8732C4.46289 4.92691 4.36523 4.92691 4.26758 4.85855C4.10156 4.75113 3.65234 4.38492 3.39355 4.12613C3.13477 3.86734 2.84668 3.52066 2.71484 3.29117C2.6709 3.21304 2.67578 3.14468 2.74414 3.04214L3.08105 2.50992C3.23242 2.27554 3.29102 1.92886 3.08105 1.63101L2.31934 0.542145C2.06543 0.175934 1.79199 0.0050354 1.49902 0.000152588C1.25488-0.00473022 1.00098 0.107574 0.742188 0.337067C0.703125 0.366364 0.668945 0.400543 0.629883 0.434723C0.185547 0.825348 0 1.25992 0 1.95816C0 3.06656 0.664062 4.42398 1.92871 5.68863C3.18359 6.94351 4.5459 7.61246 5.6543 7.61246ZM5.65918 6.95328C4.68262 6.97281 3.41309 6.21597 2.42676 5.23453C1.44043 4.25308 0.639648 2.92984 0.664062 1.95328C0.673828 1.53824 0.820312 1.18668 1.11328 0.937653C1.14258 0.913239 1.16699 0.893707 1.19141 0.869293C1.28906 0.791168 1.40137 0.74234 1.50391 0.74234C1.61133 0.74234 1.7041 0.781403 1.77734 0.888824L2.45605 1.91422C2.51953 2.00211 2.51465 2.08023 2.43652 2.2023L2.06055 2.81265C1.875 3.11539 1.90918 3.33023 2.09961 3.57437C2.33887 3.88687 2.68555 4.32144 2.94922 4.57535C3.20801 4.83414 3.72559 5.28336 3.99414 5.48355C4.23828 5.66422 4.44824 5.70328 4.84375 5.51773L5.4834 5.21011C5.61523 5.15152 5.71777 5.17105 5.83008 5.23941L6.72363 5.84C6.83105 5.90836 6.87012 6.00113 6.87012 6.10855C6.87012 6.21109 6.82129 6.32339 6.74316 6.42105C6.71875 6.45035 6.69922 6.47476 6.67969 6.49918C6.43066 6.79703 6.07422 6.94351 5.65918 6.95328Z"
+                        fill="black" fill-opacity="0.85"></path>
+                </g>
+            </svg>
         </button>
-        <!-- ATTACH BUTTON IS NO LONGER HERE -->
     </div>
 
     <!-- Overlay -->
@@ -80,72 +128,121 @@
         </div>
     </div>
 
-    <!-- Input Area -->
+    <!-- Input Area - Added glassy-surface -->
     <div class="input-area">
-        <div class="input-group">
+        <div class="input-group glassy-surface">
             <div class="attach-button-wrapper">
-                 <button class="menu-button attach-button" aria-label="Attach">
-                    <i class="bi-paperclip"></i>
+                <button class="menu-button attach-button" aria-label="Attach">
+                    <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                        viewBox="0 0 22.1191 21.5918" width="1em" height="1em">
+                        <g>
+                            <rect height="21.5918" opacity="0" width="22.1191" x="0" y="0"></rect>
+                            <path
+                                d="M12.5391 3.34961L16.5918 7.49023C17.2656 8.18359 17.3828 8.65234 17.3828 9.72656L17.3828 16.5332C17.3828 18.1934 16.5625 19.0234 14.9219 19.0234L9.46744 19.0234C9.72392 18.5916 9.91434 18.1182 10.0256 17.6172L14.8535 17.6172C15.5859 17.6172 15.9668 17.2168 15.9668 16.5137L15.9668 9.84375L11.7285 9.84375C10.7129 9.84375 10.1953 9.32617 10.1953 8.31055L10.1953 3.96484L6.9043 3.96484C6.16211 3.96484 5.78125 4.36523 5.78125 5.06836L5.78125 11.4812C5.55243 11.4427 5.31708 11.4258 5.07812 11.4258C4.83917 11.4258 4.60382 11.4427 4.375 11.4812L4.375 5.04883C4.375 3.38867 5.18555 2.55859 6.82617 2.55859L10.4395 2.55859C11.377 2.55859 11.9043 2.69531 12.5391 3.34961ZM11.5039 8.13477C11.5039 8.4082 11.6211 8.52539 11.8945 8.52539L15.7031 8.52539L11.5039 4.22852Z"
+                                fill="black" fill-opacity="0.85"></path>
+                            <path
+                                d="M9.01367 16.5039C9.01367 18.6621 7.20703 20.4492 5.07812 20.4492C2.91992 20.4492 1.14258 18.6719 1.14258 16.5039C1.14258 14.3457 2.91992 12.5684 5.07812 12.5684C7.23633 12.5684 9.01367 14.3457 9.01367 16.5039ZM4.57031 14.5703L4.57031 16.0059L3.13477 16.0059C2.83203 16.0059 2.62695 16.2012 2.62695 16.5039C2.62695 16.8164 2.83203 17.0117 3.13477 17.0117L4.57031 17.0117L4.57031 18.4473C4.57031 18.75 4.77539 18.9551 5.07812 18.9551C5.38086 18.9551 5.58594 18.75 5.58594 18.4473L5.58594 17.0117L7.02148 17.0117C7.32422 17.0117 7.5293 16.8164 7.5293 16.5039C7.5293 16.2012 7.32422 16.0059 7.02148 16.0059L5.58594 16.0059L5.58594 14.5703C5.58594 14.2676 5.38086 14.0625 5.07812 14.0625C4.77539 14.0625 4.57031 14.2676 4.57031 14.5703Z"
+                                fill="black" fill-opacity="0.85"></path>
+                        </g>
+                    </svg>
                 </button>
             </div>
-            <textarea type="text" class="form-control" placeholder="Message Yuna..." aria-label="Message Yuna"
-                id="messageInput" rows="1"></textarea>
+            <textarea class="form-control" placeholder="Message Yuna..." aria-label="Message Yuna" id="messageInput"
+                rows="1"></textarea>
             <div class="send-button-wrapper">
-                 <button class="menu-button send-button" aria-label="Send" onclick="messageManagerInstance.sendMessage()">
-                    <i class="bi-send"></i>
+                <button class="menu-button send-button" aria-label="Send"
+                    onclick="messageManagerInstance.sendMessage()">
+                    <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                        viewBox="0 0 17.3438 17.0801" width="1em" height="1em">
+                        <g>
+                            <rect height="17.0801" opacity="0" width="17.3438" x="0" y="0"></rect>
+                            <path
+                                d="M9.6582 17.0801C10.2637 17.0801 10.6836 16.5527 10.9961 15.7617L15.957 2.80273C16.1133 2.40234 16.2012 2.05078 16.2012 1.75781C16.2012 1.2207 15.8594 0.878906 15.3223 0.878906C15.0293 0.878906 14.6777 0.966797 14.2871 1.12305L1.24023 6.12305C0.556641 6.38672 0 6.81641 0 7.42188C0 8.20312 0.605469 8.44727 1.37695 8.68164L6.80664 10.2832L8.38867 15.625C8.62305 16.4453 8.87695 17.0801 9.6582 17.0801ZM7.19727 8.95508L2.06055 7.36328C1.99219 7.34375 1.97266 7.31445 1.97266 7.28516C1.97266 7.24609 1.98242 7.2168 2.06055 7.1875L11.7773 3.51562C12.4707 3.25195 13.1348 2.91016 13.8086 2.59766C13.2227 3.07617 12.5293 3.62305 12.0508 4.10156ZM9.80469 15.127C9.76562 15.127 9.74609 15.0879 9.7168 15.0195L8.125 9.88281L12.9785 5.03906C13.4668 4.55078 14.0234 3.84766 14.4922 3.25195C14.1797 3.92578 13.8281 4.59961 13.5645 5.3125L9.89258 15.0195C9.86328 15.0977 9.84375 15.127 9.80469 15.127Z"
+                                fill="black" fill-opacity="0.85"></path>
+                        </g>
+                    </svg>
                 </button>
             </div>
         </div>
     </div>
 
     <!-- Sliding Panels -->
-    <!-- Kanojo Panel -->
-    <div id="kanojoPanel" class="popup-panel">
+    <!-- Kanojo Panel - Added glassy-surface -->
+    <div id="kanojoPanel" class="popup-panel glassy-surface">
         <button class="close-button" onclick="togglePanel('kanojo')">&times;</button>
         <h4 class="mb-4">Yuna Customization</h4>
-        <div class="diary-card accordion" id="kanojoAccordion">
-            <!-- Profile and Personality Section -->
+        <div class="diary-card glassy-surface accordion" id="kanojoAccordion">
+            <!-- Profile Section -->
             <div class="accordion-item">
                 <h2 class="accordion-header">
                     <button class="accordion-button" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#profilePersonalityCollapse">
-                        Profile & Personality
+                        data-bs-target="#profileCollapse">
+                        Profile
                     </button>
                 </h2>
-                <div id="profilePersonalityCollapse" class="accordion-collapse collapse show"
-                    data-bs-parent="#kanojoAccordion">
+                <div id="profileCollapse" class="accordion-collapse collapse show" data-bs-parent="#kanojoAccordion">
                     <div class="accordion-body">
-                        <!-- Kanojo Manager -->
                         <div class="mb-3">
-                            <h5 class="card-title">Kanojo Management</h5>
-                            <div class="mb-3">
-                                <label for="kanojoSelect" class="form-label">Select Kanojo</label>
-                                <select class="form-select" id="kanojoSelect">
-                                    <option value="Yuna">Yuna</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <button type="button" class="btn btn-secondary" id="renameKanojo">Rename</button>
-                                <button type="button" class="btn btn-secondary" id="deleteKanojo">Delete</button>
-                            </div>
-                            <div class="mb-3">
-                                <button type="button" class="btn btn-primary" id="exportKanojos">Export All</button>
-                                <button type="button" class="btn btn-primary" id="importKanojos">Import All</button>
-                            </div>
-                            <div class="mb-3">
-                                <button type="button" class="btn btn-primary" id="exportSingleKanojo">Export</button>
-                                <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                                    data-bs-target="#fileModal">Import</button>
-                            </div>
+                            <label for="kanojoMemory" class="form-label">Memory</label>
+                            <textarea class="form-control" id="kanojoMemory" style="height: 100px"
+                                placeholder="Memories and context..."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="kanojoShujinko" class="form-label">Shujinko (You)</label>
+                            <textarea class="form-control" id="kanojoShujinko" style="height: 100px"
+                                placeholder="Your character description..."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="kanojoAibo" class="form-label">Aibo (AI Partner)</label>
+                            <textarea class="form-control" id="kanojoAibo" style="height: 100px"
+                                placeholder="AI character description..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LoliConnect Section -->
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#loliConnectCollapse">
+                        LoliConnect
+                    </button>
+                </h2>
+                <div id="loliConnectCollapse" class="accordion-collapse collapse" data-bs-parent="#kanojoAccordion">
+                    <div class="accordion-body">
+                        <p class="text-muted mb-3">Few-shot prompting system for specialized tasks</p>
+
+                        <div class="mb-3">
+                            <label for="loliConnectPreset" class="form-label">Preset</label>
+                            <select class="form-select" id="loliConnectPreset"
+                                onchange="loliConnectManager.loadPreset(this.value)">
+                                <option value="">Custom</option>
+                                <option value="translator">Translator</option>
+                                <option value="summarizer">Summarizer</option>
+                                <option value="coder">Code Helper</option>
+                                <option value="researcher">Researcher</option>
+                            </select>
                         </div>
 
                         <div class="mb-3">
-                            <label for="kanojoMemory" class="form-label">Memory</label>
-                            <textarea class="form-control" id="kanojoMemory" style="height: 100px"></textarea>
+                            <label for="loliConnectPreprompt" class="form-label">Preprompt</label>
+                            <textarea class="form-control" id="loliConnectPreprompt" rows="4"
+                                placeholder="Enter few-shot examples or instructions..."></textarea>
                         </div>
+
                         <div class="mb-3">
-                            <label for="kanojoCharacter" class="form-label">Character</label>
-                            <textarea class="form-control" id="kanojoCharacter" style="height: 100px"></textarea>
+                            <label for="loliConnectInput" class="form-label">Input</label>
+                            <textarea class="form-control" id="loliConnectInput" rows="3"
+                                placeholder="Enter your query..."></textarea>
+                        </div>
+
+                        <button class="btn liquid-button w-100" onclick="loliConnectManager.execute()">Execute</button>
+
+                        <div class="mt-3">
+                            <label for="loliConnectOutput" class="form-label">Output</label>
+                            <textarea class="form-control" id="loliConnectOutput" rows="6" readonly
+                                placeholder="Result will appear here..."></textarea>
                         </div>
                     </div>
                 </div>
@@ -200,7 +297,7 @@
                 </div>
             </div>
 
-            <!-- Advanced Config Section -->
+            <!-- Advanced Config Section - KEEP AS IS -->
             <div class="accordion-item">
                 <h2 class="accordion-header">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
@@ -313,10 +410,36 @@
                                 </div>
                             </div>
                         </div>
-                        <button class="btn btn-secondary mt-3" onclick="saveAdvancedConfig()">Save Config</button>
+                        <button class="btn liquid-button mt-3" onclick="saveAdvancedConfig()">Save Config</button>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Yuna Search Panel -->
+    <div id="yunaSearchPanel" class="popup-panel glassy-surface">
+        <button class="close-button" onclick="togglePanel('yunaSearch')">&times;</button>
+        <h4 class="mb-4">Yuna Search</h4>
+
+        <div class="diary-card glassy-surface mb-3">
+            <div class="search-input-wrapper">
+                <input type="text" class="form-control" id="yunaSearchInput"
+                    placeholder="Search the web with Kagi..." />
+                <!-- Suggestions will be injected here by JS -->
+                <button class="btn liquid-button mt-2 w-100" onclick="yunaSearchManager.search()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor"
+                        viewBox="0 0 16 16">
+                        <path
+                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
+                    </svg>
+                    Search
+                </button>
+            </div>
+        </div>
+
+        <div id="yunaSearchResults" class="search-results-container">
+            <!-- Results will be injected here -->
         </div>
     </div>
 
@@ -326,80 +449,297 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="fileModalLabel">Import Kanojo</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"><svg
+                            version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                            viewBox="0 0 8.45215 7.88574" width="1em" height="1em">
+                             <g>
+                                 
+                                <rect height="7.88574" opacity="0" width="8.45215" x="0" y="0" />
+                                 
+                                <path
+                                    d="M3.94043 7.88086C6.11816 7.88086 7.88574 6.11816 7.88574 3.94043C7.88574 1.7627 6.11816 0 3.94043 0C1.76758 0 0 1.7627 0 3.94043C0 6.11816 1.76758 7.88086 3.94043 7.88086ZM3.94043 7.13867C2.17285 7.13867 0.74707 5.70801 0.74707 3.94043C0.74707 2.17285 2.17285 0.742188 3.94043 0.742188C5.70801 0.742188 7.13867 2.17285 7.13867 3.94043C7.13867 5.70801 5.70801 7.13867 3.94043 7.13867Z"
+                                    fill="white" fill-opacity="0.85" />
+                                 
+                                <path
+                                    d="M2.78809 5.69824C2.92969 5.69824 3.00293 5.6543 3.11523 5.49805L3.91113 4.38477L3.92578 4.38477L4.72168 5.49805C4.83398 5.6543 4.91211 5.69824 5.04883 5.69824C5.24414 5.69824 5.39062 5.57129 5.39062 5.38574C5.39062 5.29785 5.36621 5.22949 5.30762 5.15625L4.36035 3.89648L5.3125 2.62695C5.37598 2.54883 5.40039 2.48047 5.40039 2.39746C5.40039 2.22656 5.25391 2.09473 5.06836 2.09473C4.93164 2.09473 4.84863 2.13867 4.75098 2.28516L3.98926 3.40332L3.96973 3.40332L3.18359 2.28027C3.08594 2.13867 3.00293 2.09473 2.85645 2.09473C2.6709 2.09473 2.51465 2.23633 2.51465 2.41211C2.51465 2.50977 2.53906 2.57324 2.60742 2.66602L3.50586 3.87207L2.54395 5.17578C2.48535 5.25391 2.46582 5.3125 2.46582 5.40039C2.46582 5.57129 2.60742 5.69824 2.78809 5.69824Z"
+                                    fill="white" fill-opacity="0.85" />
+                                 </g>
+                        </svg></button>
                 </div>
                 <div class="modal-body">
                     <input type="file" id="fileInput" accept=".json">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="fileSubmit">Submit</button>
+                    <button type="button" class="btn liquid-button" id="fileSubmit">Submit</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- History Panel -->
-    <div id="historyPanel" class="popup-panel">
+    <!-- History Panel - Added glassy-surface -->
+    <div id="historyPanel" class="popup-panel glassy-surface">
         <button class="close-button" onclick="togglePanel('history')">&times;</button>
         <h4 class="mb-4">Chat History</h4>
-        <button id="createChatButton" class="btn btn-sm btn-success mb-2" onclick="createNewChat()">Create New Chat</button>
+        <button id="createChatButton" class="btn liquid-button mb-2" onclick="createNewChat()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor"
+                class="bi bi-chat-heart" viewBox="0 0 16 16">
+                <path
+                    d="M4 1v1h8V1H4zm0 2h8v1H4V3zm0 2h8v1H4V5zm0 2h8v1H4V7zm0 2h8v1H4V9zm-1 3.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5v-1z" />
+            </svg>
+            &nbsp;Create New Chat
+        </button>
         <ul id="chatList" class="list-group">
             <!-- Chats will be dynamically populated here -->
         </ul>
     </div>
 
-    <!-- Himitsu Panel -->
-    <div id="himitsuPanel" class="popup-panel">
+    <!-- Himitsu Panel - Added glassy-surface -->
+    <div id="himitsuPanel" class="popup-panel glassy-surface">
         <button class="close-button" onclick="togglePanel('himitsu')">&times;</button>
-        <h4 class="mb-4">Himitsu & YUI</h4>
-        <div class="diary-card">
-            <h5>Learn</h5>
+        <h4 class="mb-4">Himitsu Creator</h4>
+
+        <!-- ORIGINAL Himitsu Creator Section -->
+        <div class="diary-card glassy-surface">
+            <h4 class="mb-3">Himitsu Creator</h4>
             <div class="mb-3">
-                <label for="secretTitle" class="form-label">Question</label>
-                <input type="text" class="form-control" id="secretTitle" placeholder="Enter the question">
+                <h5 class="mb-1">General Area</h5>
+                <textarea class="form-control w-100" id="work-area" placeholder="Enter content..."
+                    style="resize: none; height: 100px;"></textarea>
+            </div>
+            <div class="d-flex gap-2 mb-3">
+                <button type="button" class="liquid-button p-2" id="createButtonHimitsuCreator">Create</button>
+                <button type="button" class="simple-button p-2" id="clearButtonHimitsuCreator">Clear</button>
             </div>
             <div class="mb-3">
-                <label for="secretContent" class="form-label">Content</label>
-                <textarea class="form-control" id="secretContent" rows="4"
-                    placeholder="Enter additional content"></textarea>
+                <h5>Presentation</h5>
+                <textarea id="output-area" placeholder="Output will appear here..." class="form-control w-100"
+                    style="resize: none; height: 100px;"></textarea>
             </div>
-            <button type="button" class="btn btn-primary">Start</button>
         </div>
 
-        <h4 class="mb-4">Himitsu Creator</h4>
-        <div class="diary-card">
+        <!-- Word Count & Analysis Card -->
+        <div class="diary-card glassy-surface mt-3">
+            <h4 class="mb-3">Word Count & Analysis</h4>
+            <div class="word-count-tool">
+                <textarea class="form-control w-100 mb-3" id="wordCountInput"
+                    placeholder="Start typing here to analyze..." rows="6"></textarea>
+
+                <div id="reportSummary" class="diary-card glassy-surface p-2" style="border: none;">
+                    <div class="d-flex justify-content-between mb-2" style="font-weight: bold;">
+                        <span>Suggestions (Simulated)</span>
+                        <span class="text-color-accent">0</span>
+                    </div>
+
+                    <ul class="word-count-list">
+                        <li class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">Words</span><span id="wc-words" class="text-color-primary">0</span>
+                        </li>
+                        <li class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">Characters (no spaces)</span><span id="wc-chars-nospaces"
+                                class="text-color-primary">0</span>
+                        </li>
+                        <li class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">Characters (with spaces)</span><span id="wc-chars-spaces"
+                                class="text-color-primary">0</span>
+                        </li>
+                    </ul>
+
+                    <hr style="border-color: rgba(var(--color-primary-dark), 0.1); margin: 10px 0;">
+
+                    <ul class="word-count-list">
+                        <li class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">Sentences</span><span id="wc-sentences"
+                                class="text-color-primary">0</span>
+                        </li>
+                        <li class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">Paragraphs</span><span id="wc-paragraphs"
+                                class="text-color-primary">0</span>
+                        </li>
+                        <li class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">Reading Time</span><span id="wc-readtime"
+                                class="text-color-primary">0m 0s</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Citation Generator Card -->
+        <div class="diary-card glassy-surface mt-3">
+            <h4 class="mb-3">Citation Generator</h4>
             <div class="mb-3">
-            <h5 class="mb-3">General Area</h5>
-            <textarea class="form-control" id="work-area" placeholder="Enter content..."
-                style="resize: none; height: 100px;"></textarea>
+                <label class="form-label">Citation Style</label>
+                <div class="d-flex gap-2">
+                    <label class="custom-switch" style="flex: 1;">
+                        <input type="radio" name="citationFormat" value="APA" id="citeAPA" checked>
+                        <span class="custom-slider"></span>
+                        <div>APA</div>
+                    </label>
+                    <label class="custom-switch" style="flex: 1;">
+                        <input type="radio" name="citationFormat" value="MLA" id="citeMLA">
+                        <span class="custom-slider"></span>
+                        <div>MLA</div>
+                    </label>
+                    <label class="custom-switch" style="flex: 1;">
+                        <input type="radio" name="citationFormat" value="Chicago" id="citeChicago">
+                        <span class="custom-slider"></span>
+                        <div>Chicago</div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="sourceType" class="form-label">Source Type</label>
+                <select class="form-select w-100" id="sourceType">
+                    <option value="Book" selected="">Book</option>
+                    <option value="Website">Website</option>
+                    <option value="Journal">Journal Article</option>
+                    <option value="Movie">Movie</option>
+                </select>
+            </div>
+
+            <h6 class="mt-4">Source Details</h6>
+            <div id="citationInputs">
+                <div class="mb-3"><label class="form-label">Author Last Name</label><input type="text" id="citeLastName"
+                        class="form-control w-100"></div>
+                <div class="mb-3"><label class="form-label">Publication Year</label><input type="number" id="citeYear"
+                        class="form-control w-100"></div>
+                <div class="mb-3"><label class="form-label">Title</label><input type="text" id="citeTitle"
+                        class="form-control w-100"></div>
+                <div class="mb-3"><label class="form-label">Publisher</label><input type="text" id="citePublisher"
+                        class="form-control w-100"></div>
+            </div>
+
+            <h6 class="mt-4">Citation Preview</h6>
+            <div id="citationPreview" class="diary-card glassy-surface" style="min-height: 80px; font-style: italic;">
+                Add details to see the formatted citation here.
+            </div>
+
+            <button id="copyCitationButton" class="liquid-button w-100 p-2 mt-3">Copy Citation</button>
+        </div>
+
+    </div>
+    <!-- Sliding Panels - ADD NEW PANEL HERE -->
+
+    <!-- Hanasu (Audio Book) Panel -->
+    <div id="hanasuReaderPanel" class="popup-panel glassy-surface">
+        <button class="close-button" onclick="togglePanel('hanasuReader')">&times;</button>
+        <h4 class="mb-4">Hanasu Audio Reader</h4>
+
+        <div class="diary-card glassy-surface mb-3">
+            <h5>Library</h5>
+            <ul id="hanasuLibraryList" class="library-list">
+                <!-- Books dynamically loaded here -->
+            </ul>
+            <div class="d-flex gap-2">
+                <button class="btn liquid-button flex-grow-1" onclick="hanasuManager.loadBookForReading()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor"
+                        class="bi bi-book" viewBox="0 0 16 16">
+                        <path
+                            d="M1 2.828v10.975c0 .324.316.637.599.827l5.483 3.427a.89.89 0 0 0 .836 0l5.483-3.427c.283-.19.599-.503.599-.827V2.828c0-.622-.647-.9-.982-.472L8 5.48V1.5c0-.622-.647-.9-.982-.472zM2 3.25V13.5a.5.5 0 0 0 .776.417L8 10.334l5.224 3.583a.5.5 0 0 0 .776-.417V3.25c0-.184-.199-.3-.39-.184L8 6.48 2.39.184A.5.5 0 0 0 2 3.25z" />
+                    </svg>
+                    Open Selected
+                </button>
+                <button class="btn btn-secondary" onclick="hanasuManager.deleteSelectedBook()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor"
+                        viewBox="0 0 16 16">
+                        <path
+                            d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
+                        <path
+                            d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1zm-2-1H4.5a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1M5 14h6V4H5zm6.854.146a.5.5 0 0 0 0-.708L14 11.293V10h1.5a.5.5 0 0 0 0-1H14V2.5a.5.5 0 0 0-.5-.5H11z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="diary-card glassy-surface new-book-input">
+            <h5>Add New Book/Article</h5>
+            <div class="mb-3">
+                <label for="newBookTitle" class="form-label">Title</label>
+                <input type="text" class="form-control" id="newBookTitle" placeholder="The Adventures of Yuna">
             </div>
             <div class="mb-3">
-            <button type="button" class="btn btn-primary me-2" id="createButtonHimitsuCreator">Create</button>
-            <button type="button" class="btn btn-danger" id="clearButtonHimitsuCreator">Clear</button>
+                <label for="newBookContent" class="form-label">Content (Paste text or upload file)</label>
+                <textarea class="form-control" id="newBookContent" rows="6"
+                    placeholder="Paste your article or novel text here."></textarea>
             </div>
-            <div class="mb-3">
-            <h5>Presentation</h5>
-            <textarea id="output-area" placeholder="Output will appear here..." class="form-control" style="resize: none; height: 100px;"></textarea>
-            </div>
+            <input type="file" id="newBookFileInput" accept=".txt" class="form-control mb-3">
+            <button class="btn liquid-button w-100" onclick="hanasuManager.addNewBook()">Save to Library</button>
+        </div>
+
+        <hr class="mt-4 mb-4">
+
+        <!-- Reader View -->
+        <h5 id="readerTitle">No Book Selected</h5>
+        <p class="text-muted" id="readerStatus">Select a book from the library to begin reading.</p>
+
+        <div id="readerArea" class="reader-area glassy-surface mb-3" contenteditable="true">
+            <!-- Text content goes here, with spans for highlighting -->
+        </div>
+
+        <!-- Playback Controls -->
+        <div class="hanasu-controls">
+            <button class="control-button" id="hanasuPlayPause" onclick="hanasuManager.togglePlayback()">
+                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                    viewBox="0 0 6.09375 6.51855" width="1em" height="1em">
+                    <g>
+                        <rect height="6.51855" opacity="0" width="6.09375" x="0" y="0"></rect>
+                        <path
+                            d="M0.268555 5.91309C0.268555 6.31836 0.498047 6.51367 0.78125 6.51367C0.90332 6.51367 1.03516 6.47461 1.16211 6.40625L5.62012 3.81836C5.97656 3.6084 6.09375 3.47656 6.09375 3.25684C6.09375 3.03711 5.97656 2.90527 5.62012 2.69531L1.16211 0.107422C1.03516 0.0390625 0.90332 0 0.78125 0C0.498047 0 0.268555 0.195312 0.268555 0.600586ZM0.97168 5.58105L0.97168 0.932617C0.97168 0.878906 1.02539 0.849609 1.07422 0.874023L5.06836 3.20312C5.09766 3.21289 5.10742 3.2373 5.10742 3.25684C5.10742 3.27637 5.09766 3.2959 5.06836 3.31055L1.07422 5.63965C1.02539 5.66406 0.97168 5.63477 0.97168 5.58105Z"
+                            fill="white" fill-opacity="0.85"></path>
+                    </g>
+                </svg>
+            </button>
+            <button class="control-button" id="hanasuStop" onclick="hanasuManager.stopPlayback()">
+                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                    viewBox="0 0 6.88477 6.32324" width="1em" height="1em">
+                     <g>
+                         
+                        <rect height="6.32324" opacity="0" width="6.88477" x="0" y="0" />
+                         
+                        <path
+                            d="M0 5.43457C0 5.99121 0.336914 6.31836 0.90332 6.31836L5.41504 6.31836C5.98145 6.31836 6.31836 5.99121 6.31836 5.43457L6.31836 0.883789C6.31836 0.327148 5.98145 0 5.41504 0L0.90332 0C0.336914 0 0 0.327148 0 0.883789ZM0.703125 5.25879L0.703125 1.05957C0.703125 0.834961 0.834961 0.703125 1.0498 0.703125L5.26855 0.703125C5.48828 0.703125 5.61523 0.834961 5.61523 1.05957L5.61523 5.25879C5.61523 5.4834 5.48828 5.61523 5.26855 5.61523L1.0498 5.61523C0.834961 5.61523 0.703125 5.4834 0.703125 5.25879Z"
+                            fill="white" fill-opacity="0.85" />
+                         </g>
+                </svg>
+            </button>
+            <button class="btn liquid-button flex-grow-1" onclick="hanasuManager.generateSelection()">Generate
+                Selection</button>
         </div>
     </div>
-
     <!-- Create Chat Modal -->
-    <div class="modal fade" id="createChatModal" tabindex="-1" aria-labelledby="createChatModalLabel" aria-hidden="true">
+    <div class="modal fade" id="createChatModal" tabindex="-1" aria-labelledby="createChatModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="createChatModalLabel">Create New Chat</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"><svg
+                            version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                            viewBox="0 0 8.45215 7.88574" width="1em" height="1em">
+                             <g>
+                                 
+                                <rect height="7.88574" opacity="0" width="8.45215" x="0" y="0" />
+                                 
+                                <path
+                                    d="M3.94043 7.88086C6.11816 7.88086 7.88574 6.11816 7.88574 3.94043C7.88574 1.7627 6.11816 0 3.94043 0C1.76758 0 0 1.7627 0 3.94043C0 6.11816 1.76758 7.88086 3.94043 7.88086ZM3.94043 7.13867C2.17285 7.13867 0.74707 5.70801 0.74707 3.94043C0.74707 2.17285 2.17285 0.742188 3.94043 0.742188C5.70801 0.742188 7.13867 2.17285 7.13867 3.94043C7.13867 5.70801 5.70801 7.13867 3.94043 7.13867Z"
+                                    fill="white" fill-opacity="0.85" />
+                                 
+                                <path
+                                    d="M2.78809 5.69824C2.92969 5.69824 3.00293 5.6543 3.11523 5.49805L3.91113 4.38477L3.92578 4.38477L4.72168 5.49805C4.83398 5.6543 4.91211 5.69824 5.04883 5.69824C5.24414 5.69824 5.39062 5.57129 5.39062 5.38574C5.39062 5.29785 5.36621 5.22949 5.30762 5.15625L4.36035 3.89648L5.3125 2.62695C5.37598 2.54883 5.40039 2.48047 5.40039 2.39746C5.40039 2.22656 5.25391 2.09473 5.06836 2.09473C4.93164 2.09473 4.84863 2.13867 4.75098 2.28516L3.98926 3.40332L3.96973 3.40332L3.18359 2.28027C3.08594 2.13867 3.00293 2.09473 2.85645 2.09473C2.6709 2.09473 2.51465 2.23633 2.51465 2.41211C2.51465 2.50977 2.53906 2.57324 2.60742 2.66602L3.50586 3.87207L2.54395 5.17578C2.48535 5.25391 2.46582 5.3125 2.46582 5.40039C2.46582 5.57129 2.60742 5.69824 2.78809 5.69824Z"
+                                    fill="white" fill-opacity="0.85" />
+                                 </g>
+                        </svg></button>
                 </div>
                 <div class="modal-body">
                     <label for="newChatNameInput" class="form-label">Chat Name</label>
                     <input type="text" class="form-control" id="newChatNameInput" placeholder="new_chat.json">
+                    <div class="form-text">e.g., `new_chat.json`</div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="confirmCreateChatButton">Create</button>
+                    <button type="button" class="btn liquid-button" id="confirmCreateChatButton">Create</button>
                 </div>
             </div>
         </div>
@@ -408,47 +748,179 @@
     <!-- Call Modal -->
     <div class="modal fade" id="callModal" tabindex="-1" aria-labelledby="callModalLabel" aria-hidden="true"
         data-bs-backdrop="static" data-bs-keyboard="false">
-        <div class="modal-dialog modal-fullscreen modal-dialog-centered">
+        <div class="modal-dialog modal-fullscreen">
             <div class="modal-content modal-custom">
-                <!-- Main container for the call background and overlays -->
-                <div class="call-container" id="callContainer-modal">
-                    <!-- Yuna's video/image as the main background -->
-                    <img src="/static/img/yuna-girl.webp" alt="Yuna Call" class="call-background-image">
-
-                    <!-- Adorable, draggable user video bubble -->
-                    <div id="userVideoFrame" class="video-frame-user">
-                        <video id="localVideo" class="w-100 h-100" muted autoplay></video>
-                    </div>
-
-                    <!-- Overlay for controls and status -->
-                    <div class="call-overlay">
-                        <div class="controls-bar">
-                            <button class="control-button" aria-label="Mute/Unmute Microphone"><i class="bi-mic"></i></button>
-                            <button class="control-button" aria-label="Start/Stop Video"><i class="bi-camera-video"></i></button>
-
-                            <!-- The main, adorable record button -->
-                            <button id="recordButton" class="control-button record-button" aria-label="Start Recording">
-                                <i class="bi bi-mic-fill"></i>
-                            </button>
-
-                            <button class="control-button end-call-button" aria-label="End Call"
-                                onclick="callManagerInstance.endCall()">
-                                <i class="bi-telephone-fill"></i>
-                            </button>
-                        </div>
-                    </div>
+                <!-- Call Top Bar -->
+                <div class="call-top-bar">
+                    <h5 class="modal-title" id="callModalLabel">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor"
+                            viewBox="0 0 16 16" style="margin-right: 8px;">
+                            <path
+                                d="M3.654 1.328a.678.678 0 0 0-1.015-.063L1.605 2.3c-.483.484-.661 1.169-.45 1.77a17.6 17.6 0 0 0 4.168 6.608 17.6 17.6 0 0 0 6.608 4.168c.601.211 1.286.033 1.77-.45l1.034-1.034a.678.678 0 0 0-.063-1.015l-2.307-1.794a.68.68 0 0 0-.58-.122l-2.19.547a1.75 1.75 0 0 1-1.657-.459L5.482 8.062a1.75 1.75 0 0 1-.46-1.657l.548-2.19a.68.68 0 0 0-.122-.58zM1.884.511a1.745 1.745 0 0 1 2.612.163L6.29 2.98c.329.423.445.974.315 1.494l-.547 2.19a.68.68 0 0 0 .178.643l2.457 2.457a.68.68 0 0 0 .644.178l2.189-.547a1.75 1.75 0 0 1 1.494.315l2.306 1.794c.829.645.905 1.87.163 2.611l-1.034 1.034c-.74.74-1.846 1.065-2.877.702a18.6 18.6 0 0 1-7.01-4.42 18.6 18.6 0 0 1-4.42-7.009c-.362-1.03-.037-2.137.703-2.877z" />
+                        </svg>
+                        Calling Yuna
+                    </h5>
+                    <button type="button" class="btn-close" aria-label="Minimize" onclick="switchToFloatingVideo()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white" viewBox="0 0 16 16">
+                            <path
+                                d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
+                            <path
+                                d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708z" />
+                        </svg>
+                    </button>
                 </div>
 
-                <!-- Top bar for title and windowing button -->
-                <div class="modal-header border-0 call-top-bar">
-                    <h5 class="modal-title" id="callModalLabel">Yuna</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
-                        onclick="switchToFloatingVideo()"></button>
+                <!-- Main Call Container -->
+                <div class="call-container">
+                    <!-- Background Image -->
+                    <img src="/static/img/yuna-girl.webp" alt="Yuna" class="call-background-image">
+
+                    <!-- User Video Bubble -->
+                    <div id="userVideoFrame" class="video-frame-user">
+                        <video id="localVideo" muted autoplay></video>
+                    </div>
+
+                    <!-- Call Overlay - Controls at Bottom -->
+                    <div class="call-overlay">
+                        <!-- Call Status -->
+                        <div id="callStatus">Click the microphone to speak</div>
+
+                        <!-- Main Controls -->
+                        <div class="controls-bar">
+                            <button class="control-button" id="audioToggleButton" title="Mute/Unmute">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path
+                                        d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5" />
+                                    <path
+                                        d="M10 8a2 2 0 1 1-4 0V3a2 2 0 1 1 4 0zM8 0a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V3a3 3 0 0 0-3-3" />
+                                </svg>
+                            </button>
+
+                            <button class="control-button" id="videoToggleButton" title="Camera On/Off">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd"
+                                        d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2zm11.5 5.175 3.5 1.556V4.269l-3.5 1.556zM2 4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1z" />
+                                </svg>
+                            </button>
+
+                            <button class="control-button" id="photoCaptureButton" title="Take Photo">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path d="M10.5 8.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
+                                    <path
+                                        d="M2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4zm.5 2a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1m9 2.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0" />
+                                </svg>
+                            </button>
+
+                            <button class="control-button" id="videoRecordButton" title="Record Video">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd"
+                                        d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2z" />
+                                    <circle cx="5.5" cy="8" r="1.5" fill="red" />
+                                </svg>
+                            </button>
+
+                            <button id="recordButton" class="control-button record-button" title="Record Audio">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0z" />
+                                    <path
+                                        d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5" />
+                                </svg>
+                            </button>
+
+                            <button class="control-button end-call-button" onclick="callManagerInstance.endCall()"
+                                title="End Call">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd"
+                                        d="M1.885.511a1.745 1.745 0 0 1 2.612.163L6.29 2.98c.329.423.445.974.315 1.494l-.547 2.19a.68.68 0 0 0 .178.643l2.457 2.457a.68.68 0 0 0 .644.178l2.189-.547a1.75 1.75 0 0 1 1.494.315l2.306 1.794c.829.645.905 1.87.163 2.611l-1.034 1.034c-.74.74-1.846 1.065-2.877.702a18.6 18.6 0 0 1-7.01-4.42 18.6 18.6 0 0 1-4.42-7.009c-.362-1.03-.037-2.137.703-2.877z" />
+                                    <path fill-rule="evenodd"
+                                        d="M11.146 1.646a.5.5 0 0 1 .708 0L14 3.793l2.146-2.147a.5.5 0 0 1 .708.708L14.707 4.5l2.147 2.146a.5.5 0 0 1-.708.708L14 5.207l-2.146 2.147a.5.5 0 0 1-.708-.708L13.293 4.5l-2.147-2.146a.5.5 0 0 1 0-.708" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Settings Bar -->
+                        <div class="call-settings-bar">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="ttsToggle" checked>
+                                <label class="form-check-label" for="ttsToggle">TTS Reply</label>
+                            </div>
+                            <select id="micSelect" class="form-select">
+                                <option>Default Microphone</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    <script src="/static/js/bootstrap.min.js"></script>
+
+    <!-- Add the Media Modal HTML structure -->
+    <div class="modal fade" id="mediaModal" tabindex="-1" aria-labelledby="mediaModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-body p-1">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+                        style="position: absolute; top: 10px; right: 10px; z-index: 10; filter: drop-shadow(0 0 3px black);"><svg
+                            version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                            viewBox="0 0 8.45215 7.88574" width="1em" height="1em">
+                             <g>
+                                 
+                                <rect height="7.88574" opacity="0" width="8.45215" x="0" y="0" />
+                                 
+                                <path
+                                    d="M3.94043 7.88086C6.11816 7.88086 7.88574 6.11816 7.88574 3.94043C7.88574 1.7627 6.11816 0 3.94043 0C1.76758 0 0 1.7627 0 3.94043C0 6.11816 1.76758 7.88086 3.94043 7.88086ZM3.94043 7.13867C2.17285 7.13867 0.74707 5.70801 0.74707 3.94043C0.74707 2.17285 2.17285 0.742188 3.94043 0.742188C5.70801 0.742188 7.13867 2.17285 7.13867 3.94043C7.13867 5.70801 5.70801 7.13867 3.94043 7.13867Z"
+                                    fill="white" fill-opacity="0.85" />
+                                 
+                                <path
+                                    d="M2.78809 5.69824C2.92969 5.69824 3.00293 5.6543 3.11523 5.49805L3.91113 4.38477L3.92578 4.38477L4.72168 5.49805C4.83398 5.6543 4.91211 5.69824 5.04883 5.69824C5.24414 5.69824 5.39062 5.57129 5.39062 5.38574C5.39062 5.29785 5.36621 5.22949 5.30762 5.15625L4.36035 3.89648L5.3125 2.62695C5.37598 2.54883 5.40039 2.48047 5.40039 2.39746C5.40039 2.22656 5.25391 2.09473 5.06836 2.09473C4.93164 2.09473 4.84863 2.13867 4.75098 2.28516L3.98926 3.40332L3.96973 3.40332L3.18359 2.28027C3.08594 2.13867 3.00293 2.09473 2.85645 2.09473C2.6709 2.09473 2.51465 2.23633 2.51465 2.41211C2.51465 2.50977 2.53906 2.57324 2.60742 2.66602L3.50586 3.87207L2.54395 5.17578C2.48535 5.25391 2.46582 5.3125 2.46582 5.40039C2.46582 5.57129 2.60742 5.69824 2.78809 5.69824Z"
+                                    fill="white" fill-opacity="0.85" />
+                                 </g>
+                        </svg></button>
+                    <div class="media-content">
+                        <!-- Media element inserted here by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add the Text File Modal HTML structure -->
+    <div class="modal fade" id="textFileModal" tabindex="-1" aria-labelledby="textFileModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="textFileModalLabel">File Content</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"><svg
+                            version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                            viewBox="0 0 8.45215 7.88574" width="1em" height="1em">
+                             <g>
+                                 
+                                <rect height="7.88574" opacity="0" width="8.45215" x="0" y="0" />
+                                 
+                                <path
+                                    d="M3.94043 7.88086C6.11816 7.88086 7.88574 6.11816 7.88574 3.94043C7.88574 1.7627 6.11816 0 3.94043 0C1.76758 0 0 1.7627 0 3.94043C0 6.11816 1.76758 7.88086 3.94043 7.88086ZM3.94043 7.13867C2.17285 7.13867 0.74707 5.70801 0.74707 3.94043C0.74707 2.17285 2.17285 0.742188 3.94043 0.742188C5.70801 0.742188 7.13867 2.17285 7.13867 3.94043C7.13867 5.70801 5.70801 7.13867 3.94043 7.13867Z"
+                                    fill="white" fill-opacity="0.85" />
+                                 
+                                <path
+                                    d="M2.78809 5.69824C2.92969 5.69824 3.00293 5.6543 3.11523 5.49805L3.91113 4.38477L3.92578 4.38477L4.72168 5.49805C4.83398 5.6543 4.91211 5.69824 5.04883 5.69824C5.24414 5.69824 5.39062 5.57129 5.39062 5.38574C5.39062 5.29785 5.36621 5.22949 5.30762 5.15625L4.36035 3.89648L5.3125 2.62695C5.37598 2.54883 5.40039 2.48047 5.40039 2.39746C5.40039 2.22656 5.25391 2.09473 5.06836 2.09473C4.93164 2.09473 4.84863 2.13867 4.75098 2.28516L3.98926 3.40332L3.96973 3.40332L3.18359 2.28027C3.08594 2.13867 3.00293 2.09473 2.85645 2.09473C2.6709 2.09473 2.51465 2.23633 2.51465 2.41211C2.51465 2.50977 2.53906 2.57324 2.60742 2.66602L3.50586 3.87207L2.54395 5.17578C2.48535 5.25391 2.46582 5.3125 2.46582 5.40039C2.46582 5.57129 2.60742 5.69824 2.78809 5.69824Z"
+                                    fill="white" fill-opacity="0.85" />
+                                 </g>
+                        </svg></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-file-content">
+                        <!-- Text content inserted here by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

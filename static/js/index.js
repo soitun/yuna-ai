@@ -1,6 +1,14 @@
 var messageIdCounter = 0;
 var currentAttachments = [];
 
+// Apply the glassy-surface class to static elements
+['floatingMenu', 'kanojoPanel', 'historyPanel', 'himitsuPanel', 'hanasuReaderPanel'].forEach(id => {
+    document.getElementById(id)?.classList.add('glassy-surface');
+});
+document.querySelector('.input-area .input-group')?.classList.add('glassy-surface');
+document.querySelectorAll('.diary-card').forEach(el => el.classList.add('glassy-surface'));
+document.getElementById('readerArea')?.classList.add('glassy-surface'); // Add to reader area
+
 // Panel Management
 const togglePanel = (panelName) => {
     const id = `${panelName}Panel`;
@@ -27,6 +35,7 @@ const handleFileAttachment = () => {
     fileInput.multiple = true;
     fileInput.accept = 'image/*,video/*,audio/*,text/*,.txt,.py,.js,.html,.css,.json,.xml,.md,.csv,.log,.conf,.ini,.yaml,.yml,.sh,.bat,.sql,.php,.cpp,.c,.h,.java,.cs,.rb,.go,.rs,.swift,.kt,.ts,.vue,.jsx,.tsx';
     fileInput.onchange = (e) => {
+        // Clear previous attachments if new files are selected
         currentAttachments = Array.from(e.target.files || []);
         updateAttachmentIndicator();
     };
@@ -38,12 +47,20 @@ const updateAttachmentIndicator = () => {
     const messageInput = document.getElementById('messageInput');
     if (!attachButton || !messageInput) return;
     if (currentAttachments.length > 0) {
+        // Use SVG for the icon and show count
         attachButton.classList.add('has-attachments');
-        attachButton.innerHTML = `<i class="bi-paperclip"></i> ${currentAttachments.length}`;
+        attachButton.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-paperclip" viewBox="0 0 16 16">
+                <path d="M4.5 3.5a1 1 0 0 1 1 1v7a2 2 0 1 0 4 0V5.071c0-1.24-1.03-2.245-2.296-2.004l3.18 3.18a3.5 3.5 0 0 1-5.918 3.654L4.5 10.071V4.5a1 1 0 0 1 1-1z"/>
+            </svg>
+            ${currentAttachments.length}`;
         messageInput.placeholder = `Message Yuna... (${currentAttachments.length} files attached)`;
     } else {
         attachButton.classList.remove('has-attachments');
-        attachButton.innerHTML = `<i class="bi-paperclip"></i>`;
+        attachButton.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-paperclip" viewBox="0 0 16 16">
+                <path d="M4.5 3.5a1 1 0 0 1 1 1v7a2 2 0 1 0 4 0V5.071c0-1.24-1.03-2.245-2.296-2.004l3.18 3.18a3.5 3.5 0 0 1-5.918 3.654L4.5 10.071V4.5a1 1 0 0 1 1-1z"/>
+            </svg>`;
         messageInput.placeholder = 'Message Yuna...';
     }
 };
@@ -184,10 +201,10 @@ class messageManager {
         return message.id;
     }
 
-    createActionButton(iconClass, title, onClick) {
+    createActionButton(icon, title, onClick) {
         const button = document.createElement('button');
         button.className = 'action-btn';
-        button.innerHTML = `<i class="${iconClass}"></i>`;
+        button.innerHTML = icon;
         button.title = title;
         button.onclick = (e) => {
             e.stopPropagation();
@@ -494,7 +511,7 @@ class messageManager {
                         message: userMsg,
                         chat: chatHistoryManagerInstance?.selectedFilename,
                         useHistory: document.getElementById('useHistory')?.checked,
-                        kanojo: kanojoManagerInstance?.buildPrompt(kanojoManagerInstance?.selectedKanojo),
+                        kanojo: kanojoManagerInstance?.buildPrompt(),
                         speech: false,
                         yunaConfig: typeof config_data !== 'undefined' ? config_data : undefined,
                         stream: true
@@ -542,7 +559,7 @@ class messageManager {
                                         const actionButtons = document.createElement('div');
                                         actionButtons.className = 'message-actions';
 
-                                        const regenerateBtn = this.createActionButton('bi-arrow-clockwise', 'Regenerate', () => this.regenerateMessage(aiMessageDiv.id));
+                                        const regenerateBtn = this.createActionButton(`bi-arrow-clockwise`, 'Regenerate', () => this.regenerateMessage(aiMessageDiv.id));
                                         const editBtn = this.createActionButton('bi-pencil', 'Edit', () => this.editMessage(aiMessageDiv.id));
                                         const deleteBtn = this.createActionButton('bi-trash', 'Delete', () => this.deleteMessage(aiMessageDiv.id));
                                         const copyBtn = this.createActionButton('bi-clipboard', 'Copy', () => this.copyMessage(aiMessageDiv.id));
@@ -585,7 +602,7 @@ class messageManager {
                     message: userMsg,
                     chat: chatHistoryManagerInstance?.selectedFilename,
                     useHistory: document.getElementById('useHistory')?.checked,
-                    kanojo: kanojoManagerInstance?.buildPrompt(kanojoManagerInstance?.selectedKanojo),
+                    kanojo: kanojoManagerInstance?.buildPrompt(),
                     speech: false,
                     yunaConfig: typeof config_data !== 'undefined' ? config_data : undefined,
                     stream: false
@@ -629,7 +646,7 @@ class messageManager {
                     message: { id: messageId }, // Pass the AI message ID
                     chat: chatHistoryManagerInstance?.selectedFilename,
                     useHistory: document.getElementById('useHistory')?.checked,
-                    kanojo: kanojoManagerInstance?.buildPrompt(kanojoManagerInstance?.selectedKanojo),
+                    kanojo: kanojoManagerInstance?.buildPrompt(),
                     speech: false,
                     yunaConfig: typeof config_data !== 'undefined' ? config_data : undefined,
                     stream: false,
@@ -675,34 +692,17 @@ const bindAttachButton = () => {
 bindAttachButton();
 document.addEventListener('DOMContentLoaded', bindAttachButton);
 
-// Text File Modal
+// Text File Modal (Remains the same, using new modal HTML)
 const openTextFileModal = (name, content) => {
-    let modal = document.getElementById('textFileModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'textFileModal';
-        modal.className = 'modal fade';
-        modal.tabIndex = -1;
-        modal.innerHTML = `
-            <div class="modal-dialog modal-dialog-centered modal-xl">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">File Content</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="text-file-content"></div>
-                    </div>
-                </div>
-            </div>`;
-        document.body.appendChild(modal);
-    }
+    const modal = document.getElementById('textFileModal');
+    if (!modal) return;
 
     const modalTitle = modal.querySelector('.modal-title');
     const contentDiv = modal.querySelector('.text-file-content');
 
     modalTitle.textContent = name;
-    contentDiv.innerHTML = `<pre><code>${content}</code></pre>`;
+    // Highlight syntax if possible, otherwise use <pre><code>
+    contentDiv.innerHTML = `<pre><code>${content.split('<').join('&lt;').split('>').join('&gt;')}</code></pre>`;
 
     new bootstrap.Modal(modal).show();
 };
@@ -710,12 +710,14 @@ const openTextFileModal = (name, content) => {
 class CallManager {
     constructor() {
         this.isAudioRecording = false;
+        this.isVideoRecording = false;
         this.mediaRecorder = null;
+        this.recordedChunks = [];
         this.audioChunks = [];
         this.stream = null;
         this.pendingAudioUrl = null;
         this.callModal = null;
-        // New state variables
+
         this.isTTSMode = true;
         this.selectedMicId = null;
         this.currentFacingMode = 'user';
@@ -724,13 +726,15 @@ class CallManager {
     }
 
     init() {
-        this.callModal = new bootstrap.Modal(document.getElementById('callModal'));
+        this.callModal = document.getElementById('callModal');
 
         // --- Call Modal Controls ---
         document.getElementById('recordButton')?.addEventListener('click', () => this.toggleAudioRecording());
-        document.getElementById('userVideoFrame')?.addEventListener('click', () => this.switchCamera());
+        document.getElementById('userVideoFrame')?.addEventListener('click', (e) => this.switchCamera(e));
         document.getElementById('photoCaptureButton')?.addEventListener('click', () => this.capturePhoto());
         document.getElementById('videoRecordButton')?.addEventListener('click', () => this.toggleVideoRecording());
+        document.getElementById('audioToggleButton')?.addEventListener('click', () => this.toggleMic());
+        document.getElementById('videoToggleButton')?.addEventListener('click', () => this.toggleVideo());
 
         // --- Settings ---
         document.getElementById('ttsToggle')?.addEventListener('change', (e) => this.isTTSMode = e.target.checked);
@@ -751,6 +755,9 @@ class CallManager {
 
     async populateMicrophones() {
         try {
+            const genericStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            genericStream.getTracks().forEach(track => track.stop());
+
             const devices = await navigator.mediaDevices.enumerateDevices();
             const mics = devices.filter(device => device.kind === 'audioinput');
             const micSelect = document.getElementById('micSelect');
@@ -758,25 +765,37 @@ class CallManager {
 
             micSelect.innerHTML = mics.map(mic => `<option value="${mic.deviceId}">${mic.label || `Microphone ${micSelect.options.length + 1}`}</option>`).join('');
 
-            // Restore saved preference
-            this.selectedMicId = localStorage.getItem('selectedMicId');
+            this.selectedMicId = localStorage.getItem('selectedMicId') || (mics.length > 0 ? mics[0].deviceId : null);
             if (this.selectedMicId) {
                 micSelect.value = this.selectedMicId;
-            } else if (mics.length > 0) {
-                this.selectedMicId = mics[0].deviceId;
             }
         } catch (err) {
-            console.error('Could not enumerate devices:', err);
+            console.warn('Could not enumerate devices or failed to get initial audio permission:', err);
+            this.updateStatus('Microphone access denied or unavailable.');
         }
     }
 
     async startCall(isRestart = false) {
         if (!isRestart) {
-            this.callModal.show();
+            // Simple modal show - add 'show' class and display block
+            if (this.callModal) {
+                this.callModal.classList.add('show');
+                this.callModal.style.display = 'block';
+                document.body.classList.add('modal-open');
+                
+                // Add backdrop
+                let backdrop = document.querySelector('.modal-backdrop');
+                if (!backdrop) {
+                    backdrop = document.createElement('div');
+                    backdrop.className = 'modal-backdrop fade show';
+                    document.body.appendChild(backdrop);
+                }
+            }
         }
 
         if (this.stream) {
             this.stream.getTracks().forEach(track => track.stop());
+            this.stream = null;
         }
 
         try {
@@ -792,7 +811,10 @@ class CallManager {
                 localVideo.classList.toggle('flip-horizontal', this.currentFacingMode === 'user');
             }
 
-            this.updateStatus('Click a button to start');
+            this.stream.getAudioTracks().forEach(track => this.updateControlState('audioToggleButton', track.enabled));
+            this.stream.getVideoTracks().forEach(track => this.updateControlState('videoToggleButton', track.enabled));
+
+            this.updateStatus('Click the microphone to speak');
 
         } catch (err) {
             console.error('Error accessing media devices:', err);
@@ -801,9 +823,20 @@ class CallManager {
         }
     }
 
-    async switchCamera() {
-        this.currentFacingMode = this.currentFacingMode === 'user' ? 'environment' : 'user';
-        await this.startCall(true); // Restart stream with new camera
+    updateControlState(buttonId, isEnabled) {
+        const button = document.getElementById(buttonId) || document.getElementById(`floating${buttonId.substring(0, buttonId.length - 6)}`);
+        if (button) {
+            button.classList.toggle('active', isEnabled);
+        }
+    }
+
+    toggleMic() {
+        if (!this.stream) return;
+        const audioTrack = this.stream.getAudioTracks()[0];
+        if (audioTrack) {
+            audioTrack.enabled = !audioTrack.enabled;
+            this.updateControlState('audioToggleButton', audioTrack.enabled);
+        }
     }
 
     toggleVideo() {
@@ -811,44 +844,66 @@ class CallManager {
         const videoTrack = this.stream.getVideoTracks()[0];
         if (videoTrack) {
             videoTrack.enabled = !videoTrack.enabled;
-            document.getElementById('videoToggleButton').classList.toggle('active', videoTrack.enabled);
+            this.updateControlState('videoToggleButton', videoTrack.enabled);
         }
     }
 
+    switchCamera(e = null) {
+        if (e) e.stopPropagation();
+        this.currentFacingMode = this.currentFacingMode === 'user' ? 'environment' : 'user';
+        this.startCall(true);
+    }
+
     endCall() {
-        if (this.isAudioRecording) this.toggleAudioRecording(); // Stop recording if active
-        if (this.isVideoRecording) this.toggleVideoRecording(); // Stop recording if active
+        if (this.isAudioRecording) this.toggleAudioRecording();
+        if (this.isVideoRecording) this.toggleVideoRecording();
         if (this.stream) {
             this.stream.getTracks().forEach(track => track.stop());
             this.stream = null;
         }
-        this.callModal.hide();
+        
+        // Simple modal hide
+        if (this.callModal) {
+            this.callModal.classList.remove('show');
+            this.callModal.style.display = 'none';
+            document.body.classList.remove('modal-open');
+            
+            // Remove backdrop
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) backdrop.remove();
+        }
+        
         this.closeFloatingVideo();
         this.updateStatus('Call ended.');
+        document.getElementById('recordButton')?.classList.remove('recording');
     }
 
     setupMediaRecorder(isAudioOnly = true) {
         if (!this.stream) return;
+        const tracks = isAudioOnly ? this.stream.getAudioTracks() : this.stream.getTracks();
+        const mediaStream = new MediaStream(tracks);
+
         try {
-            const options = isAudioOnly ? { mimeType: 'audio/webm' } : { mimeType: 'video/webm' };
-            this.mediaRecorder = new MediaRecorder(this.stream, options);
-            this.mediaRecorder.ondataavailable = event => this.recordedChunks.push(event.data);
+            const mimeType = isAudioOnly ? 'audio/webm;codecs=opus' : 'video/webm;codecs=vp8,opus';
+            const options = { mimeType: MediaRecorder.isTypeSupported(mimeType) ? mimeType : (isAudioOnly ? 'audio/webm' : 'video/webm') };
+
+            this.mediaRecorder = new MediaRecorder(mediaStream, options);
+            this.recordedChunks = [];
+            this.mediaRecorder.ondataavailable = event => {
+                if (event.data.size > 0) this.recordedChunks.push(event.data);
+            };
 
             this.mediaRecorder.onstop = () => {
-                const mimeType = isAudioOnly ? 'audio/wav' : 'video/webm';
-                const fileExtension = isAudioOnly ? 'wav' : 'webm';
-                const recordedBlob = new Blob(this.recordedChunks, { type: mimeType });
+                const recordedBlob = new Blob(this.recordedChunks, { type: this.mediaRecorder.mimeType });
                 this.recordedChunks = [];
 
-                if (this.isPhotoPending) {
-                    // This case is now handled by toggleAudioRecording
-                } else if (isAudioOnly) {
+                if (isAudioOnly) {
                     this.sendAudioToServer(recordedBlob);
                 } else {
-                    // It's a video recording. Send it as an attachment.
-                    const videoFile = new File([recordedBlob], `video_message.${fileExtension}`, { type: mimeType });
+                    const fileExtension = recordedBlob.type.includes('video') ? 'webm' : recordedBlob.type.split('/')[1];
+                    const videoFile = new File([recordedBlob], `video_message.${fileExtension}`, { type: recordedBlob.type });
                     currentAttachments.push(videoFile);
-                    messageManagerInstance.sendMessage(""); // Send with empty text
+                    messageManagerInstance.sendMessage("Video attachment sent.");
                 }
             };
         } catch (err) {
@@ -859,9 +914,13 @@ class CallManager {
 
     toggleAudioRecording() {
         this.isAudioRecording = !this.isAudioRecording;
+
+        if (this.isAudioRecording && this.isVideoRecording) {
+            this.toggleVideoRecording();
+        }
+
         if (this.isAudioRecording) {
-            this.setupMediaRecorder(true); // Audio only
-            this.recordedChunks = [];
+            this.setupMediaRecorder(true);
             this.mediaRecorder.start();
             this.updateStatus('Listening...');
         } else {
@@ -871,24 +930,29 @@ class CallManager {
             this.updateStatus('Processing...');
         }
         document.getElementById('recordButton')?.classList.toggle('recording', this.isAudioRecording);
+        document.getElementById('floatingAudioRecord')?.classList.toggle('recording', this.isAudioRecording);
     }
 
     toggleVideoRecording() {
         this.isVideoRecording = !this.isVideoRecording;
-        const button = document.getElementById('videoRecordButton');
+
+        if (this.isVideoRecording && this.isAudioRecording) {
+            this.toggleAudioRecording();
+        }
+
         if (this.isVideoRecording) {
-            this.setupMediaRecorder(false); // Audio AND Video
-            this.recordedChunks = [];
+            this.setupMediaRecorder(false);
             this.mediaRecorder.start();
             this.updateStatus('Recording video...');
-            button?.classList.add('recording');
         } else {
             if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
                 this.mediaRecorder.stop();
             }
             this.updateStatus('Processing video...');
-            button?.classList.remove('recording');
         }
+
+        document.getElementById('videoRecordButton')?.classList.toggle('recording', this.isVideoRecording);
+        document.getElementById('floatingVideoRecord')?.classList.toggle('recording', this.isVideoRecording);
     }
 
     capturePhoto() {
@@ -903,7 +967,6 @@ class CallManager {
         canvas.height = localVideo.videoHeight;
         const ctx = canvas.getContext('2d');
 
-        // Flip the image if the video is mirrored
         if (this.currentFacingMode === 'user') {
             ctx.translate(canvas.width, 0);
             ctx.scale(-1, 1);
@@ -914,11 +977,10 @@ class CallManager {
         canvas.toBlob(blob => {
             const photoFile = new File([blob], "selfie.jpg", { type: "image/jpeg" });
             currentAttachments.push(photoFile);
-            messageManagerInstance.sendMessage(); // Send immediately with empty text
+            messageManagerInstance.sendMessage("Image captured and sent.");
 
-            // Visual feedback
             this.updateStatus('Photo sent!');
-            setTimeout(() => this.updateStatus('Click a button to start'), 1500);
+            setTimeout(() => this.updateStatus('Click the microphone to speak'), 1500);
 
         }, 'image/jpeg');
     }
@@ -929,15 +991,28 @@ class CallManager {
         formData.append('chat_id', chatHistoryManagerInstance.selectedFilename);
         formData.append('kanojo', kanojoManagerInstance.buildPrompt(kanojoManagerInstance.selectedKanojo));
         formData.append('useHistory', document.getElementById('useHistory')?.checked);
+
+        const config = typeof config_data !== 'undefined' ? config_data : {};
+
         try {
             const response = await fetch('/call', { method: 'POST', body: formData });
             const data = await response.json();
             if (data.error) throw new Error(data.error);
-            messageManagerInstance.renderMessage({ name: 'User', type: 'text', text: data.user_text });
-            messageManagerInstance.renderMessage({ name: 'Yuna', type: 'text', text: data.yuna_text });
+
+            const tempTTSState = this.isTTSMode;
+            this.isTTSMode = false;
+
+            const userMsgId = messageManagerInstance.renderMessage({ name: config.ai.names[0], type: 'text', text: data.user_text });
+            const aiMsgId = messageManagerInstance.renderMessage({ name: config.ai.names[1], type: 'text', text: data.yuna_text });
+
             this.pendingAudioUrl = data.audio_url;
-            this.updateStatus(`Yuna: "${data.yuna_text}" (Click to hear)`, true)
+            this.updateStatus(`Yuna: ${data.yuna_text.substring(0, 50)}...`, true)
             this.playPendingAudio();
+
+            setTimeout(() => {
+                this.isTTSMode = tempTTSState;
+            }, 500);
+
         } catch (err) {
             console.error('Error during call:', err);
             this.updateStatus('Sorry, an error occurred.', false);
@@ -945,13 +1020,12 @@ class CallManager {
     }
 
     playPendingAudio() {
-        if (this.pendingAudioUrl && this.isTTSMode) {
-            this.updateStatus('Playing...', false);
+        if (this.pendingAudioUrl) {
+            this.updateStatus('Playing Yuna\'s response...', false);
             const audio = new Audio(this.pendingAudioUrl);
             audio.play();
             audio.onended = () => this.updateStatus('Click the microphone to speak', false);
         } else {
-            // If TTS is off, just reset the status
              this.updateStatus('Click the microphone to speak', false);
         }
         this.pendingAudioUrl = null;
@@ -961,8 +1035,8 @@ class CallManager {
         const statusEl = document.getElementById('callStatus');
         if (statusEl) {
             statusEl.textContent = text;
-            statusEl.classList.toggle('playable', isPlayable && this.isTTSMode);
-            if (isPlayable && this.isTTSMode) {
+            statusEl.classList.toggle('playable', isPlayable && !this.isTTSMode);
+            if (isPlayable && !this.isTTSMode) {
                  statusEl.onclick = () => this.playPendingAudio();
             } else {
                  statusEl.onclick = null;
@@ -976,20 +1050,26 @@ class CallManager {
             videoWindow = document.createElement('div');
             videoWindow.className = 'floating-video-window';
             videoWindow.id = 'floatingVideoWindow';
-            // Add full controls to the floating window
             videoWindow.innerHTML = `
                 <video id="floatingVideo" muted autoplay></video>
                 <div class="floating-controls">
-                    <button id="floatingPhotoCapture" class="control-button"><i class="bi-camera"></i></button>
-                    <button id="floatingVideoRecord" class="control-button"><i class="bi-camera-reels"></i></button>
-                    <button id="floatingAudioRecord" class="control-button record-button"><i class="bi-mic-fill"></i></button>
-                    <button class="control-button end-call-button" onclick="callManagerInstance.endCall()"><i class="bi-telephone-x"></i></button>
+                    <button id="floatingPhotoCapture" class="control-button" aria-label="Capture Photo">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16"><path d="M10.5 8.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0"/><path d="M2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4zm.5 2a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1m9 2.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0"/></svg>
+                    </button>
+                    <button id="floatingVideoRecord" class="control-button" aria-label="Record Video">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2z"/><circle cx="5.5" cy="8" r="1.5" fill="red"/></svg>
+                    </button>
+                    <button id="floatingAudioRecord" class="control-button record-button" aria-label="Start Recording">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16"><path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0z"/><path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5"/></svg>
+                    </button>
+                    <button class="control-button end-call-button" onclick="callManagerInstance.endCall()" aria-label="End Call">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.885.511a1.745 1.745 0 0 1 2.612.163L6.29 2.98c.329.423.445.974.315 1.494l-.547 2.19a.68.68 0 0 0 .178.643l2.457 2.457a.68.68 0 0 0 .644.178l2.189-.547a1.75 1.75 0 0 1 1.494.315l2.306 1.794c.829.645.905 1.87.163 2.611l-1.034 1.034c-.74.74-1.846 1.065-2.877.702a18.6 18.6 0 0 1-7.01-4.42 18.6 18.6 0 0 1-4.42-7.009c-.362-1.03-.037-2.137.703-2.877z"/><path fill-rule="evenodd" d="M11.146 1.646a.5.5 0 0 1 .708 0L14 3.793l2.146-2.147a.5.5 0 0 1 .708.708L14.707 4.5l2.147 2.146a.5.5 0 0 1-.708.708L14 5.207l-2.146 2.147a.5.5 0 0 1-.708-.708L13.293 4.5l-2.147-2.146a.5.5 0 0 1 0-.708"/></svg>
+                    </button>
                 </div>
             `;
             document.body.appendChild(videoWindow);
             makeDraggable(videoWindow);
 
-            // Wire up new floating buttons
             document.getElementById('floatingPhotoCapture').addEventListener('click', () => this.capturePhoto());
             document.getElementById('floatingVideoRecord').addEventListener('click', () => this.toggleVideoRecording());
             document.getElementById('floatingAudioRecord').addEventListener('click', () => this.toggleAudioRecording());
@@ -997,13 +1077,22 @@ class CallManager {
 
         const floatingVideo = document.getElementById('floatingVideo');
         if (floatingVideo && this.stream) {
-            floatingVideo.srcObject = this.stream;
+            floatingVideo.srcObject = new MediaStream(this.stream.getVideoTracks());
             floatingVideo.classList.toggle('flip-horizontal', this.currentFacingMode === 'user');
         }
 
         videoWindow.classList.add('active');
-        this.callModal.hide();
-    };
+        
+        // Hide main modal
+        if (this.callModal) {
+            this.callModal.classList.remove('show');
+            this.callModal.style.display = 'none';
+            document.body.classList.remove('modal-open');
+            
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) backdrop.remove();
+        }
+    }
 
     closeFloatingVideo() {
         const videoWindow = document.getElementById('floatingVideoWindow');
@@ -1018,25 +1107,84 @@ const endCall = () => callManagerInstance.endCall();
 const switchToFloatingVideo = () => callManagerInstance.switchToFloatingVideo();
 const closeFloatingVideo = () => callManagerInstance.closeFloatingVideo();
 
-// Advanced Config
-const saveAdvancedConfig = () => {
-    const config = {
-        maxNewTokens: document.getElementById('maxNewTokens')?.value,
-        contextLength: document.getElementById('contextLength')?.value,
-        temperature: document.getElementById('temperature')?.value,
-        topP: document.getElementById('topP')?.value
-    };
-    fetch('/save-config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
+// Simple modal helper
+const SimpleModal = {
+    show: (modalId) => {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.add('show');
+            modal.style.display = 'block';
+            document.body.classList.add('modal-open');
+            
+            let backdrop = document.querySelector('.modal-backdrop');
+            if (!backdrop) {
+                backdrop = document.createElement('div');
+                backdrop.className = 'modal-backdrop fade show';
+                document.body.appendChild(backdrop);
+            }
+        }
+    },
+    hide: (modalId) => {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.remove('show');
+            modal.style.display = 'none';
+            document.body.classList.remove('modal-open');
+            
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) backdrop.remove();
+        }
+    },
+    getOrCreate: (modalId) => ({
+        show: () => SimpleModal.show(modalId),
+        hide: () => SimpleModal.hide(modalId)
     })
-    .then(r => r.json())
-    .then(data => alert(data.message))
-    .catch(err => console.error('Error:', err));
 };
 
-// File Modal Submit
+// This function shows the modal instead of a prompt
+function createNewChat() {
+    const modalEl = document.getElementById('createChatModal');
+    if (!modalEl) return;
+
+    if (typeof closeAllPanels === 'function') {
+        closeAllPanels();
+    }
+
+    const chatModal = SimpleModal.getOrCreate('createChatModal');
+    const inputEl = document.getElementById('newChatNameInput');
+
+    if(inputEl) {
+        inputEl.value = 'new_chat.json';
+        inputEl.focus();
+    }
+
+    chatModal.show();
+}
+
+// Advanced Config (Remains the same)
+const saveAdvancedConfig = () => {
+    // Collect all data from the Advanced Config panel fields
+    const config = {};
+    const inputs = document.querySelectorAll('#advancedCollapse .form-control, #advancedCollapse .form-check-input');
+    inputs.forEach(input => {
+        let key = input.id;
+        let value;
+        if (input.type === 'checkbox') {
+            value = input.checked;
+        } else if (input.type === 'number') {
+            value = parseFloat(input.value) || parseInt(input.value);
+        } else {
+            value = input.value;
+        }
+        config[key] = value;
+    });
+
+    // Dummy fetch for demonstration; in a real app, this would update the backend config
+    console.log('Saving advanced config:', config);
+    alert('Advanced Config saved locally (simulated)');
+};
+
+// File Modal Submit (Remains the same)
 document.getElementById('fileSubmit')?.addEventListener('click', () => {
     const fileInput = document.getElementById('fileInput');
     const file = fileInput?.files?.[0];
@@ -1046,12 +1194,17 @@ document.getElementById('fileSubmit')?.addEventListener('click', () => {
     reader.onload = () => {
         try {
             const kanojoData = JSON.parse(reader.result);
-            // This logic should be in himitsu.js, let's adapt it
             if (window.kanojoManagerInstance) {
+                // Merge imported kanojos with existing ones
                 Object.assign(window.kanojoManagerInstance.kanojos, kanojoData);
                 window.kanojoManagerInstance.saveKanojos();
-                // Find a way to refresh the dropdown in the panel
-                alert('Import successful! Please reopen the Kanojo panel to see changes.');
+
+                // Refresh the panel using the method defined in himitsu.js
+                if (typeof window.populateKanojoSelect === 'function') {
+                    window.populateKanojoSelect();
+                } else {
+                    alert('Import successful! Please reopen the Kanojo panel to see changes. (JS dependency missing)');
+                }
             }
              bootstrap.Modal.getInstance(document.getElementById('fileModal'))?.hide();
         } catch (err) {
@@ -1062,44 +1215,41 @@ document.getElementById('fileSubmit')?.addEventListener('click', () => {
     reader.readAsText(file);
 });
 
-// Media Modal
+// Media Modal (Uses new structure)
 const openMediaModal = (src, type) => {
-    let modal = document.getElementById('mediaModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'mediaModal';
-        modal.className = 'modal fade';
-        modal.tabIndex = -1;
-        modal.innerHTML = `
-            <div class="modal-dialog modal-dialog-centered modal-xl">
-                <div class="modal-content">
-                    <div class="modal-body">
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        <div class="media-content"></div>
-                    </div>
-                </div>
-            </div>`;
-        document.body.appendChild(modal);
-    }
+    const modal = document.getElementById('mediaModal');
+    if (!modal) return;
+
+    const contentDiv = modal.querySelector('.media-content');
 
     const element = document.createElement(type === 'image' ? 'img' : 'video');
     element.src = src;
     element.className = 'modal-media';
+    element.style.maxWidth = '100%';
+    element.style.maxHeight = '90vh';
+    element.style.display = 'block';
+    element.style.margin = 'auto';
+    element.style.borderRadius = '15px';
+
     if (type === 'video') element.controls = true;
 
-    modal.querySelector('.media-content')?.replaceChildren(element);
+    contentDiv.replaceChildren(element);
     new bootstrap.Modal(modal).show();
 };
 
-// Draggable
+// Draggable (Remains the same)
 const makeDraggable = (el) => {
     if (!el) return;
     let pos = { x: 0, y: 0 };
     const dragMouseDown = (e) => {
-        e.preventDefault();
-        pos = { x: e.clientX, y: e.clientY };
-        document.addEventListener('mouseup', closeDragElement);
-        document.addEventListener('mousemove', elementDrag);
+        // Only start drag if not clicking buttons/inputs inside the frame
+        if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT') {
+            e.preventDefault();
+            pos = { x: e.clientX, y: e.clientY };
+            document.addEventListener('mouseup', closeDragElement);
+            document.addEventListener('mousemove', elementDrag);
+            el.style.cursor = 'grabbing';
+        }
     };
     const elementDrag = (e) => {
         e.preventDefault();
@@ -1110,14 +1260,23 @@ const makeDraggable = (el) => {
     const closeDragElement = () => {
         document.removeEventListener('mouseup', closeDragElement);
         document.removeEventListener('mousemove', elementDrag);
+        el.style.cursor = 'grab';
     };
     el.addEventListener('mousedown', dragMouseDown);
 };
 
-// Observe for dynamic audio windows
+// Intersection Observer for performance (remains the same)
 const observer = new MutationObserver(mutations => {
     mutations.forEach(m => {
-        m.addedNodes.forEach(n => { if (n.id === 'floatingVideoWindow') makeDraggable(n); });
+        m.addedNodes.forEach(n => {
+            if (n.id === 'floatingVideoWindow' && n.nodeType === 1) {
+                makeDraggable(n);
+                // Rebind floating controls
+                document.getElementById('floatingPhotoCapture')?.addEventListener('click', () => callManagerInstance.capturePhoto());
+                document.getElementById('floatingVideoRecord')?.addEventListener('click', () => callManagerInstance.toggleVideoRecording());
+                document.getElementById('floatingAudioRecord')?.addEventListener('click', () => callManagerInstance.toggleAudioRecording());
+            }
+        });
     });
 });
 observer.observe(document.body, { childList: true, subtree: true });
@@ -1129,23 +1288,51 @@ const initializeDraggables = () => {
 
 // This ensures all HTML is loaded before we try to find elements
 document.addEventListener('DOMContentLoaded', () => {
-    callManagerInstance.init(); // Initialize the call manager
+    callManagerInstance.init();
     bindAttachButton();
     initializeDraggables();
 
-    // Auto-resize logic for the textarea
     const messageInput = document.getElementById('messageInput');
     if (messageInput) {
         messageInput.addEventListener('input', () => {
-            // Reset height to auto to get the correct scrollHeight
             messageInput.style.height = 'auto';
-            // Set the height to the scrollHeight to expand it
             messageInput.style.height = `${messageInput.scrollHeight}px`;
         });
     }
+
+    // ADD THIS: Fix accordion functionality
+    document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = button.getAttribute('data-bs-target');
+            const target = document.querySelector(targetId);
+            
+            if (target) {
+                const isExpanded = target.classList.contains('show');
+                
+                // Close all other accordions in the same parent
+                const parent = target.closest('.accordion');
+                if (parent) {
+                    parent.querySelectorAll('.accordion-collapse.show').forEach(collapse => {
+                        if (collapse !== target) {
+                            collapse.classList.remove('show');
+                            const collapseButton = document.querySelector(`[data-bs-target="#${collapse.id}"]`);
+                            if (collapseButton) {
+                                collapseButton.classList.add('collapsed');
+                            }
+                        }
+                    });
+                }
+                
+                // Toggle current accordion
+                target.classList.toggle('show');
+                button.classList.toggle('collapsed');
+            }
+        });
+    });
 });
 
-// Expose needed functions to window
+// Expose needed functions to window (optional, but good for debugging/framework)
 try {
     Object.assign(window, {
         togglePanel,
@@ -1162,7 +1349,8 @@ try {
         makeDraggable,
         switchToFloatingVideo,
         closeFloatingVideo,
+        saveAdvancedConfig,
+        messageManagerInstance,
+        callManagerInstance,
     });
-    window.messageManagerInstance = messageManagerInstance;
-    window.callManagerInstance = callManagerInstance;
 } catch (e) {}

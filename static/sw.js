@@ -1,6 +1,5 @@
 'use strict';
 
-// Remove the conditional check that's causing issues
 importScripts('/static/sw-toolbox.js');
 
 toolbox.precache([
@@ -8,8 +7,6 @@ toolbox.precache([
     "/static/js/index.js",
     "/static/js/history.js",
     "/static/js/himitsu.js",
-    "/static/js/markdown.js",
-    "/static/js/bootstrap.min.js",
     "/static/fonts/yukiarimo.woff",
     "/static/img/yuna-ai.png",
     '/static/img/yuna-girl.webp'
@@ -29,6 +26,13 @@ self.addEventListener('activate', function (event) {
 });
 
 self.addEventListener('fetch', function (event) {
+    // Don't intercept external API calls (like Kagi)
+    const url = new URL(event.request.url);
+    if (url.hostname !== location.hostname) {
+        // Let external requests pass through without caching
+        return;
+    }
+
     event.respondWith(
         fetch(event.request).catch(function () {
             return caches.match(event.request);

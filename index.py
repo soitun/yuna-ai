@@ -2,6 +2,7 @@ import json
 import os
 import uuid
 import base64
+import requests
 from werkzeug.utils import secure_filename
 from time import time
 from flask import Flask, request, send_from_directory, redirect, url_for, jsonify, Response
@@ -178,7 +179,7 @@ class YunaServer:
 
         @self.app.after_request
         def add_cache_headers(response):
-            #if request.path.startswith('/static/'): response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+            if request.path.startswith('/static/'): response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
             return response
 
     @staticmethod
@@ -214,7 +215,8 @@ class YunaServer:
         self.app.route('/call', methods=['POST'], endpoint='call')(lambda: handle_call_request(self.worker, self.chat_history_manager, config))
         self.app.route('/analyze', methods=['POST'], endpoint='textfile')(lambda: handle_textfile_request(self.chat_generator))
         self.app.route('/logout', methods=['GET'])(self.logout)
-        self.app.route('/search', methods=['POST'], endpoint='search')(lambda: handle_search_request(self.worker))
+        self.app.route('/search', methods=['GET'])(handle_kagi_search)
+        self.app.route('/searchsuggest', methods=['GET'])(handle_kagisuggest)
 
     def custom_static(self, filename): return send_from_directory(self.app.static_folder, 'static/' + filename if not filename.startswith(('static/', '/favicon.ico', '/manifest.json')) else filename)
     def image_pwa(self): return send_from_directory(self.app.static_folder, 'img/yuna-ai.png')
@@ -227,29 +229,35 @@ class YunaServer:
     def main(self):
         if current_user.is_authenticated: return send_from_directory('.', 'index.html')
         if request.method == 'GET': return login_html
+
         action = request.form['action']
         username = request.form['username']
         password = request.form['password']
         users = self.read_users()
+
         if users.get(username) != password and action != 'register': return send_from_directory('.', 'index.html')
         if action == 'register' and username in users:
             users[username] = password
             self.write_users(users)
             os.makedirs(f'db/history/{username}', exist_ok=True)
+
         elif action == 'login':
             user = self.User()
             user.id = username
             login_user(user)
             return redirect(url_for('main'))
+
         elif action == 'change_password':
             users[username] = request.form['new_password']
             self.write_users(users)
+
         elif action == 'change_username':
             new_username = request.form['new_username']
             users[new_username] = password
             del users[username]
             self.write_users(users)
             os.rename(f'db/history/{username}', f'db/history/{new_username}')
+
         elif action == 'delete_account':
             del users[username]
             self.write_users(users)
@@ -260,10 +268,8 @@ class YunaServer:
 def update_chat_history(chat_history_manager, user_id, chat_id, text, response, config, messageId, attachments_info=None, append_user=True):
     chat_history = chat_history_manager.load_chat_history(user_id, chat_id)
 
-    # Optionally append the user message (normal send)
     if append_user:
-        if messageId is None:
-            messageId = f"msg-{int(time() * 1000)}"
+        if messageId is None: messageId = f"msg-{int(time() * 1000)}"
         user_message = {"name": config['ai']['names'][0], "text": text, "id": messageId}
         if attachments_info:
             user_message["data"] = attachments_info
@@ -318,7 +324,6 @@ def handle_message_request(worker, chat_history_manager, config):
     yuna_config = worker.config if data.get('yunaConfig') else None
     user_id = current_user.get_id()
     chat_history = chat_history_manager.load_chat_history(user_id, chat_id)
-
     append_user = True
 
     if regenerate:
@@ -352,6 +357,7 @@ def handle_message_request(worker, chat_history_manager, config):
             if attachment.get('type') == 'text':
                 text_content = attachment.get('content', '')
                 text_contents.append(text_content)
+
                 if append_user:
                     original_name = attachment.get('name', 'uploaded_file.txt')
                     safe_filename = secure_filename(original_name)
@@ -359,13 +365,13 @@ def handle_message_request(worker, chat_history_manager, config):
                     text_path = os.path.join(text_upload_dir, unique_filename)
                     with open(text_path, "w", encoding='utf-8') as file: file.write(text_content)
                     web_path = f"/{text_path}"
-                    attachments_info_for_history.append({
-                        "type": "text", "path": web_path, "name": original_name, "content": text_content
-                    })
+                    attachments_info_for_history.append({"type": "text", "path": web_path, "name": original_name, "content": text_content})
+
             elif attachment.get('type', '').startswith('image/'):
                 if not append_user and attachment.get('path'):
                     existing_path = attachment.get('path', '').lstrip('/')
                     if os.path.exists(existing_path): image_paths_for_vlm.append(existing_path)
+
                 elif append_user:
                     original_name = attachment.get('name', 'uploaded_image.jpg')
                     safe_filename = secure_filename(original_name)
@@ -376,65 +382,36 @@ def handle_message_request(worker, chat_history_manager, config):
                     image_paths_for_vlm.append(image_path)
                     web_path = f"/{image_path}"
                     attachments_info_for_history.append({"type": "image", "path": web_path, "name": original_name})
+
         if text_contents:
             text_data = ''.join([f"<data>{content}</data>" for content in text_contents])
             processed_text = f"{text}{text_data}" if text else text_data
 
-    response_gen = worker.generate_text(
-        processed_text,
-        kanojo,
-        chat_history,
-        useHistory,
-        yuna_config,
-        stream,
-        image_paths=image_paths_for_vlm,
-        append_current_user=append_user
-    )
+    response_gen = worker.generate_text(processed_text, kanojo, chat_history, useHistory, yuna_config, stream, image_paths=image_paths_for_vlm, append_current_user=append_user)
 
     if stream:
         def generate_stream():
             response_text = ''
             ai_message_id = None
-            try:
-                # *** FIX HERE: We iterate over the generator instance ***
-                for chunk in response_gen:
-                    response_text += chunk
-                    yield f"data: {json.dumps({'chunk': chunk})}\n\n"
 
-                if useHistory:
-                    ai_message_id = update_chat_history(chat_history_manager, user_id, chat_id,
-                                        text,
-                                        response_text, config,
-                                        message_obj.get('id') if append_user else None,
-                                        attachments_info_for_history if append_user else None,
-                                        append_user=append_user)
+            for chunk in response_gen:
+                response_text += chunk
+                yield f"data: {json.dumps({'chunk': chunk})}\n\n"
 
-                yield f"data: {json.dumps({'done': True, 'ai_message_id': ai_message_id, 'full_response': response_text})}\n\n"
+            if useHistory: ai_message_id = update_chat_history(chat_history_manager, user_id, chat_id, text, response_text, config, message_obj.get('id') if append_user else None, attachments_info_for_history if append_user else None, append_user=append_user)
+            yield f"data: {json.dumps({'done': True, 'ai_message_id': ai_message_id, 'full_response': response_text})}\n\n"
 
-                if speech:
-                    worker.speak_text(response_text)
-
-            except Exception as e:
-                import traceback
-                traceback.print_exc()
-                yield f"data: {json.dumps({'error': str(e)})}\n\n"
-
-        return Response(generate_stream(), mimetype='text/event-stream', headers={
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive'
-        })
-    else:
-        # For non-streaming, response_gen is already the final string
-        response_text = response_gen
-        ai_message_id = None
-        if useHistory:
-            ai_message_id = update_chat_history(chat_history_manager, user_id, chat_id,
-                                                text,
-                                                response_text, config,
-                                                message_obj.get('id') if append_user else None,
-                                                attachments_info_for_history if append_user else None,
-                                                append_user=append_user)
             if speech: worker.speak_text(response_text)
+
+        return Response(generate_stream(), mimetype='text/event-stream', headers={'Cache-Control': 'no-cache', 'Connection': 'keep-alive'})
+    else:
+        if isinstance(response_gen, str): response_text = response_gen
+        else: response_text = ''.join(list(response_gen))
+
+        ai_message_id = None
+        if useHistory: ai_message_id = update_chat_history(chat_history_manager, user_id, chat_id, text, response_text, config, message_obj.get('id') if append_user else None, attachments_info_for_history if append_user else None, append_user=append_user)
+        if speech: worker.speak_text(response_text)
+
         print("Response:", response_text)
         return jsonify({'response': response_text, 'ai_message_id': ai_message_id})
 
@@ -477,10 +454,12 @@ def handle_textfile_request(chat_generator):
 def handle_call_request(worker, chat_history_manager, config):
     audio_file = request.files['audio']
     user_id = current_user.get_id()
+
     temp_audio_dir = os.path.join('static', 'audio', 'temp')
     os.makedirs(temp_audio_dir, exist_ok=True)
     temp_audio_path = os.path.join(temp_audio_dir, f"{uuid.uuid4()}.wav")
     audio_file.save(temp_audio_path)
+
     user_text = worker.transcribe_audio(temp_audio_path)
     chat_id = request.form.get('chat_id')
     kanojo = request.form.get('kanojo')
@@ -488,14 +467,41 @@ def handle_call_request(worker, chat_history_manager, config):
     chat_history = chat_history_manager.load_chat_history(user_id, chat_id)
     yuna_text = worker.generate_text(user_text, kanojo, chat_history, useHistory, config)
     user_message_id = f"msg-{int(time() * 1000)}"
+
     update_chat_history(chat_history_manager, user_id, chat_id, user_text, yuna_text, config, user_message_id)
     audio_url = worker.speak_text(yuna_text)
+    return jsonify({'user_text': user_text, 'yuna_text': yuna_text, 'audio_url': f'/{audio_url}'})
 
-    return jsonify({
-        'user_text': user_text,
-        'yuna_text': yuna_text,
-        'audio_url': f'/{audio_url}'
-    })
+@login_required
+def handle_kagi_search():
+    try:
+        query = request.args.get('q', '')
+        limit = request.args.get('limit', 20)
+        api_key = request.headers.get('X-Kagi-Key')
+        
+        if not api_key:
+            return jsonify({'error': 'API key required'}), 400
+        
+        response = requests.get(
+            f'https://kagi.com/api/v0/search',
+            params={'q': query, 'limit': limit},
+            headers={'Authorization': f'Bot {api_key}'}
+        )
+        
+        if response.status_code != 200:
+            return jsonify({'error': f'Search failed: {response.status_code}'}), response.status_code
+        
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def handle_kagisuggest():
+    query = request.args.get('q', '')
+    try:
+        resp = requests.get(f'https://kagisuggest.com/api/autosuggest', params={'q': query})
+        return (resp.content, resp.status_code, {'Content-Type': resp.headers.get('Content-Type', 'application/json')})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 app = YunaServer().app
-if __name__ == '__main__': app.run(host='0.0.0.0', port=4848, ssl_context=('lib/yuna-ai.pem', 'lib/yuna-ai.key'), debug=True, threaded=True)
+if __name__ == '__main__': app.run(host='0.0.0.0', port=4848, ssl_context=('/Users/yuki/Library/Containers/io.tailscale.ipn.macos/Data/cert.pem', '/Users/yuki/Library/Containers/io.tailscale.ipn.macos/Data/key.pem'), debug=True, threaded=True) # (certificate, keyfile)

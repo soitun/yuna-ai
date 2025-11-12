@@ -3,7 +3,6 @@ config_data = {
         "names": ["Yuki", "Yuna"],
         "bos": ["<|endoftext|>", true],
         "kokoro": false,
-        "miru": false,
         "audio": false,
         "mind": false,
         "hanasu": false,
@@ -26,270 +25,54 @@ config_data = {
     },
     "server": {
         "url": "",
-        "yuna_default_model": "lib/models/yuna/yuna-ai-v4-miru-mlx",
-        "miru_default_model": ["lib/models/yuna/yuna-ai-v4-miru-q5_k_m.gguf", "lib/models/yuna/yuna-ai-v4-miru-eye-q5_k_m.gguf"],
+        "yuna_default_model": ["lib/models/yuna/yuna-ai-v4-miru-mlx"],
         "voice_default_model": ["lib/models/agi/hanasu/yuna-ai-voice-v1/config.json", "lib/models/hanasu/yuna-ai-voice-v1/G_158000.pth"],
         "device": "mps",
-        "yuna_text_mode": "mlxvlm",
+        "yuna_text_mode": "yunamlx",
         "yuna_audio_mode": "hanasu",
     },
     "settings": {
-        "fuctions": true,
         "use_history": true,
         "customConfig": true,
         "sounds": true,
-        "background_call": true,
         "streaming": true,
-        "default_history_file": "history_template:general.json",
-        "default_kanojo": "Yuna"
+        "default_history_file": "chat.json"
     }
 };
 
-// This function shows the Bootstrap modal instead of a prompt
-function createNewChat() {
-    const modalEl = document.getElementById('createChatModal');
-    if (!modalEl) return;
-
-    // Close the side panel for a cleaner UI
-    if (typeof closeAllPanels === 'function') {
-        closeAllPanels();
-    }
-
-    const chatModal = bootstrap.Modal.getOrCreateInstance(modalEl);
-    const inputEl = document.getElementById('newChatNameInput');
-
-    // Set a default value and focus the input
-    if(inputEl) {
-        inputEl.value = 'new_chat.json';
-        inputEl.focus();
-    }
-
-    chatModal.show();
-}
-
-// ChatHistoryManager Implementation
+// Simple chat manager - always uses chat.json
 class ChatHistoryManager {
     constructor() {
-        this.apiBaseUrl = `${config_data?.server?.url}` || '';
-        this.chats = [];
-        this.selectedFilename = '';
+        this.selectedFilename = 'chat.json';
     }
 
-    // Fetch all chats from the server
-    async fetchChats() {
+    async loadSelectedHistory() {
         try {
-            const response = await fetch(`${this.apiBaseUrl}/history`, {
+            const response = await fetch('/history', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ task: 'list' })
+                body: JSON.stringify({ task: 'load', chat: this.selectedFilename })
             });
-
-            if (!response.ok) throw new Error(`Error fetching chats: ${response.statusText}`);
-
-            const data = await response.json();
-            this.chats = data.history || data;
-            return this.chats;
-        } catch (error) {
-            console.error(error);
-            alert('Failed to load chat history from the server.');
-            return [];
+            const history = await response.json();
+            
+            messageManagerInstance.container.innerHTML = '';
+            history.forEach(msg => messageManagerInstance.renderMessage(msg));
+        } catch (err) {
+            console.error('Error loading history:', err);
         }
-    }
-
-    // Add a new chat/history file
-    async createHistoryFile(newFileName) {
-        try {
-            await this.postHistory('create', { chat: newFileName });
-            await populateHistorySelect();
-            this.selectedFilename = newFileName;
-        } catch (error) {
-            console.error(error);
-            alert('Failed to create new chat.');
-        }
-    }
-
-    // Load selected chat history
-    async loadSelectedHistory(filename = config_data?.settings?.default_history_file) {
-        try {
-            const data = await this.postHistory('load', { chat: filename });
-            const chatContainer = document.getElementById('chatContainer');
-            if (chatContainer) {
-                chatContainer.innerHTML = '';
-            }
-
-            if (Array.isArray(data)) {
-                data.forEach(message => {
-                    // Ensure data field is present
-                    if (!message.data) message.data = null;
-                    messageManagerInstance.renderMessage(message);
-                });
-            }
-
-            this.selectedFilename = filename;
-
-            if (typeof updateMsgCount === 'function') {
-                updateMsgCount();
-            }
-        } catch (error) {
-            console.error(error);
-            alert('Failed to load chat history.');
-        }
-    }
-
-    // Download a chat history file
-    async downloadChat(filename) {
-        try {
-            const data = await this.postHistory('load', { chat: filename });
-            const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            a.click();
-        } catch (error) {
-            console.error(error);
-            alert('Failed to download chat.');
-        }
-    }
-
-    // Delete a chat history file
-    async deleteChat(filename) {
-        await this.postHistory('delete', { chat: filename });
-        await populateHistorySelect();
-        if (this.selectedFilename === filename) {
-            this.selectedFilename = config_data?.settings?.default_history_file;
-        }
-    }
-
-    // Rename a chat history file
-    async renameChat(oldName, newName) {
-        if (!newName) return;
-
-        try {
-            await this.postHistory('rename', {
-                chat: oldName,
-                name: newName
-            });
-            await populateHistorySelect();
-            if (this.selectedFilename === oldName) {
-                this.selectedFilename = newName;
-            }
-        } catch (error) {
-            console.error(error);
-            alert('Failed to rename chat.');
-        }
-    }
-
-    // Helper method for history API calls
-    async postHistory(task, data = {}) {
-        const response = await fetch(`${this.apiBaseUrl}/history`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ task, ...data })
-        });
-
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        return response.json();
     }
 }
 
-// Initialize manager and bind UI events
 const chatHistoryManagerInstance = new ChatHistoryManager();
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Load initial chat list
-    populateHistorySelect();
-
-    // Set up the event listener for the new modal's "Create" button
-    const confirmButton = document.getElementById('confirmCreateChatButton');
-    const inputEl = document.getElementById('newChatNameInput');
-    const modalEl = document.getElementById('createChatModal');
-
-    if (confirmButton && inputEl && modalEl) {
-        const chatModal = bootstrap.Modal.getOrCreateInstance(modalEl);
-
-        const handleCreate = () => {
-            const newFileName = inputEl.value.trim();
-            if (newFileName) {
-                chatHistoryManagerInstance.createHistoryFile(newFileName);
-                chatModal.hide();
-            }
-        };
-
-        confirmButton.addEventListener('click', handleCreate);
-
-        // Also allow submission with the Enter key
-        inputEl.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                handleCreate();
-            }
-        });
-    }
-});
-
-// Helper function to render chat list UI
-function renderChatList(chats) {
-    const chatList = document.getElementById('chatList');
-    if (!chatList) return;
-
-    chatList.innerHTML = chats.map(filename => `
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-            <span class="chat-name">${filename}</span>
-            <div class="btn-group">
-                <button class="btn btn-sm btn-primary me-1" onclick="chatHistoryManagerInstance.loadSelectedHistory('${filename}')">Open</button>
-                <button class="btn btn-sm btn-secondary me-1" onclick="chatHistoryManagerInstance.renameChat('${filename}', prompt('Enter new name:', '${filename}'))">Rename</button>
-                <button class="btn btn-sm btn-secondary me-1" onclick="chatHistoryManagerInstance.downloadChat('${filename}')">Download</button>
-                <button class="btn btn-sm btn-danger" onclick="chatHistoryManagerInstance.deleteChat('${filename}')">Delete</button>
-            </div>
-        </li>
-    `).join('');
-}
-
-function updateMsgCount() {
-    const container = document.getElementById('chatContainer');
-    const count = container ? container.children.length : 0;
-    // Update count display if you have one
-    const countDisplay = document.getElementById('messageCount');
-    if (countDisplay) {
-        countDisplay.textContent = count;
-    }
-    return count;
-}
-
-// Helper function to populate history select
-async function populateHistorySelect() {
-    const chats = await chatHistoryManagerInstance.fetchChats();
-    renderChatList(chats);
-    return chats;
-}
-
-chatHistoryManagerInstance.loadSelectedHistory(config_data.server.default_history_file);
-
 const applySettings = () => {
-    const { settings } = config_data || {};
-    if (!settings) return;
-
-    // Map config settings to checkbox IDs
-    const settingsMap = {
-        'pseudo_api': 'pseudoApi',
-        'fuctions': 'functions',
-        'notifications': 'notifications',
-        'customConfig': 'customConfig',
-        'sounds': 'sounds',
-        'use_history': 'useHistory',
-        'background_call': 'backgroundCall',
-        'nsfw_filter': 'nsfw',
-        'streaming': 'streamToggle'
-    };
-
-    // Apply each setting to corresponding checkbox
-    Object.entries(settingsMap).forEach(([settingKey, elementId]) => {
-        const checkbox = document.getElementById(elementId);
-        if (checkbox && typeof settings[settingKey] === 'boolean') {
-            checkbox.checked = settings[settingKey];
-        }
-    });
+    document.getElementById('useHistory').checked = config_data.settings.use_history;
+    document.getElementById('customConfig').checked = config_data.settings.customConfig;
+    document.getElementById('sounds').checked = config_data.settings.sounds;
+    document.getElementById('streamToggle').checked = config_data.settings.streaming;
 };
 
-applySettings();
+document.addEventListener('DOMContentLoaded', () => {
+    applySettings();
+    chatHistoryManagerInstance.loadSelectedHistory();
+});
