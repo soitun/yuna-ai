@@ -1,34 +1,53 @@
 class kanojoConnect {
     constructor() {
         this.loadData();
-        
+
         // Initialize on DOM ready
         document.addEventListener('DOMContentLoaded', () => {
             this.initFields();
         });
     }
 
-    loadData() {
-        const saved = localStorage.getItem('yunaData');
-        if (saved) {
-            const data = JSON.parse(saved);
-            this.memory = data.memory || '';
-            this.shujinko = data.shujinko || '';
-            this.aibo = data.aibo || '';
-        } else {
-            this.memory = '';
-            this.shujinko = '';
-            this.aibo = '';
+    async loadData() {
+        try {
+            const response = await fetch('/user_data?type=profile');
+            const data = await response.json();
+
+            if (data && !data.error) {
+                this.memory = data.memory || '';
+                this.shujinko = data.shujinko || '';
+                this.aibo = data.aibo || '';
+
+                // Update fields if they exist
+                const memoryField = document.getElementById('kanojoMemory');
+                const shujinkoField = document.getElementById('kanojoShujinko');
+                const aiboField = document.getElementById('kanojoAibo');
+
+                if (memoryField) memoryField.value = this.memory;
+                if (shujinkoField) shujinkoField.value = this.shujinko;
+                if (aiboField) aiboField.value = this.aibo;
+            }
+        } catch (e) {
+            console.error('Failed to load profile data:', e);
         }
     }
 
-    saveData() {
+    async saveData() {
         const data = {
             memory: this.memory,
             shujinko: this.shujinko,
             aibo: this.aibo
         };
-        localStorage.setItem('yunaData', JSON.stringify(data));
+
+        try {
+            await fetch('/user_data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'profile', content: data })
+            });
+        } catch (e) {
+            console.error('Failed to save profile data:', e);
+        }
     }
 
     initFields() {
@@ -63,21 +82,21 @@ class kanojoConnect {
 
     buildPrompt() {
         let prompt = '<|begin_of_text|>\n';
-        
+
         if (this.memory && this.memory.trim()) {
             prompt += `<memory>${this.memory.trim()}</memory>\n`;
         }
-        
+
         if (this.shujinko && this.shujinko.trim()) {
             prompt += `<shujinko>${this.shujinko.trim()}</shujinko>\n`;
         }
-        
+
         if (this.aibo && this.aibo.trim()) {
             prompt += `<aibo>${this.aibo.trim()}</aibo>\n`;
         }
-        
+
         prompt += '<dialog>';
-        
+
         return prompt;
     }
 
@@ -85,7 +104,7 @@ class kanojoConnect {
     initHimitsuTools() {
         const wordCountInput = $('wordCountInput');
         wordCountInput?.addEventListener('input', this.analyzeWordCount.bind(this));
-        
+
         this.analyzeWordCount();
 
         const citationInputs = document.querySelectorAll('#citationInputs input, #citationInputs select');
@@ -145,7 +164,7 @@ class kanojoConnect {
         };
 
         let citation = 'Add details to see the formatted citation here.';
-        
+
         switch (style) {
             case 'APA':
                 citation = this.generateAPA(type, data);
@@ -174,15 +193,15 @@ class kanojoConnect {
                 <div class="mb-3"><label class="form-label">Publisher</label><input type="text" id="citePublisher" class="form-control w-100"></div>
             `;
         } else if (type === 'Website') {
-             html = `
+            html = `
                 <div class="mb-3"><label class="form-label">Author Last Name (Optional)</label><input type="text" id="citeLastName" class="form-control w-100"></div>
                 <div class="mb-3"><label class="form-label">Website Name</label><input type="text" id="citeTitle" class="form-control w-100"></div>
                 <div class="mb-3"><label class="form-label">URL</label><input type="text" id="citeWebsite" class="form-control w-100"></div>
                 <div class="mb-3"><label class="form-label">Access Date</label><input type="text" id="citeYear" class="form-control w-100" placeholder="${new Date().toLocaleDateString()}"></div>
             `;
         }
-        container.innerHTML = html || container.innerHTML; 
-        
+        container.innerHTML = html || container.innerHTML;
+
         container.querySelectorAll('input, select').forEach(input => {
             input.removeEventListener('input', this.updateCitationPreview.bind(this));
             input.addEventListener('input', this.updateCitationPreview.bind(this));
@@ -192,9 +211,10 @@ class kanojoConnect {
     copyCitation() {
         const citationText = $('citationPreview').textContent;
         navigator.clipboard.writeText(citationText).then(() => {
-            alert('Citation copied!');
+            showNotification('Citation copied!', 'success');
         }).catch(err => {
             console.error('Failed to copy citation:', err);
+            showNotification('Failed to copy citation', 'error');
         });
     }
 
@@ -237,73 +257,160 @@ kanojoManagerInstance.buildPrompt(kanojoManagerInstance.selectedKanojo);
 
 class LoliConnectManager {
     constructor() {
-        this.presets = {
-            translator: `You are a professional translator. Translate the following text accurately while preserving tone and context.
-
-Example:
-Input: Hello, how are you?
-Output: Bonjour, comment allez-vous?
-
-Input: I love programming
-Output: J'adore la programmation`,
-
-            summarizer: `You are a concise summarizer. Provide a brief, clear summary of the given text.
-
-Example:
-Input: Artificial intelligence (AI) is intelligence demonstrated by machines, as opposed to natural intelligence displayed by animals including humans. AI research has been defined as the field of study of intelligent agents, which refers to any system that perceives its environment and takes actions that maximize its chance of achieving its goals.
-Output: AI is machine intelligence that perceives environments and acts to achieve goals, contrasting with natural animal intelligence.`,
-
-            coder: `You are a helpful coding assistant. Explain code, fix bugs, or write clean implementations.
-
-Example:
-Input: Write a Python function to reverse a string
-Output:
-\`\`\`python
-def reverse_string(s):
-    return s[::-1]
-\`\`\``,
-
-            researcher: `You are a research assistant. Provide accurate, well-sourced information on topics.
-
-Example:
-Input: What is quantum computing?
-Output: Quantum computing is a type of computation that harnesses quantum mechanical phenomena like superposition and entanglement to process information. Unlike classical computers that use bits (0 or 1), quantum computers use qubits which can exist in multiple states simultaneously.`
-        };
-
+        this.presets = {};
+        this.activePreset = null;
         this.loadSavedState();
     }
 
-    loadSavedState() {
-        const saved = localStorage.getItem('loliConnectState');
-        if (saved) {
-            const state = JSON.parse(saved);
-            const prepromptField = document.getElementById('loliConnectPreprompt');
-            if (prepromptField && state.preprompt) {
-                prepromptField.value = state.preprompt;
+    async loadSavedState() {
+        try {
+            const response = await fetch('/user_data?type=loliconnect');
+            const data = await response.json();
+
+            if (data && !data.error) {
+                this.presets = data.presets || {};
+                this.activePreset = data.active || null;
+
+                // If empty, init with defaults
+                if (Object.keys(this.presets).length === 0) {
+                    this.initDefaults();
+                }
+
+                this.renderPresets();
+                this.loadActivePreset();
+            } else {
+                this.initDefaults();
+                this.renderPresets();
             }
+        } catch (e) {
+            console.error('Failed to load LoliConnect state:', e);
+            this.initDefaults();
         }
     }
 
-    saveState() {
-        const preprompt = document.getElementById('loliConnectPreprompt')?.value || '';
-        localStorage.setItem('loliConnectState', JSON.stringify({ preprompt }));
+    initDefaults() {
+        this.presets = {
+            'General': ''
+        };
+        this.activePreset = 'General';
+        this.saveState();
     }
 
-    loadPreset(presetName) {
+    async saveState() {
+        // Update current active preset value before saving
+        if (this.activePreset && this.presets[this.activePreset] !== undefined) {
+            const currentVal = document.getElementById('loliConnectPreprompt')?.value;
+            if (currentVal !== undefined) this.presets[this.activePreset] = currentVal;
+        }
+
+        try {
+            await fetch('/user_data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'loliconnect',
+                    content: {
+                        presets: this.presets,
+                        active: this.activePreset
+                    }
+                })
+            });
+            showNotification('LoliConnect saved!', 'success');
+        } catch (e) {
+            console.error('Failed to save LoliConnect state:', e);
+            showNotification('Failed to save LoliConnect', 'error');
+        }
+    }
+
+    renderPresets() {
+        const select = document.getElementById('loliConnectPresetSelect');
+        if (!select) return;
+
+        select.innerHTML = Object.keys(this.presets).map(name =>
+            `<option value="${name}" ${name === this.activePreset ? 'selected' : ''}>${name}</option>`
+        ).join('');
+
+        select.onchange = (e) => this.switchPreset(e.target.value);
+    }
+
+    switchPreset(name) {
+        // Save current before switching
+        if (this.activePreset) {
+            const currentVal = document.getElementById('loliConnectPreprompt')?.value;
+            if (currentVal !== undefined) this.presets[this.activePreset] = currentVal;
+        }
+
+        this.activePreset = name;
+        this.loadActivePreset();
+        // Don't auto-save to disk on switch, only on explicit save or edit?
+        // User said "autosave", so let's save.
+        this.saveState();
+    }
+
+    loadActivePreset() {
         const prepromptField = document.getElementById('loliConnectPreprompt');
-        if (prepromptField && presetName && this.presets[presetName]) {
-            prepromptField.value = this.presets[presetName];
-            this.saveState();
+        if (prepromptField && this.activePreset && this.presets[this.activePreset]) {
+            prepromptField.value = this.presets[this.activePreset];
         }
+    }
+
+    addPreset() {
+        showInputModal('New Loli Preset', 'Enter a name for the new preset:', (name) => {
+            if (this.presets[name]) {
+                showNotification('Preset already exists', 'error');
+                return;
+            }
+            this.presets[name] = '';
+            this.activePreset = name;
+            this.renderPresets();
+            this.loadActivePreset();
+            this.saveState();
+            showNotification(`Preset "${name}" created`, 'success');
+        });
+    }
+
+    renamePreset() {
+        if (!this.activePreset) return;
+        showInputModal('Rename Preset', `Enter new name for "${this.activePreset}":`, (newName) => {
+            if (this.presets[newName]) {
+                showNotification('Name already taken', 'error');
+                return;
+            }
+            const content = this.presets[this.activePreset];
+            delete this.presets[this.activePreset];
+            this.presets[newName] = content;
+            this.activePreset = newName;
+            this.renderPresets();
+            this.saveState();
+            showNotification('Preset renamed', 'success');
+        }, this.activePreset);
+    }
+
+    deletePreset() {
+        if (!this.activePreset) return;
+        if (Object.keys(this.presets).length <= 1) {
+            showNotification('Cannot delete the last preset', 'error');
+            return;
+        }
+
+        // No confirmation window as requested, but maybe a notification?
+        // "don't add any confirmation windows"
+        const name = this.activePreset;
+        delete this.presets[name];
+        this.activePreset = Object.keys(this.presets)[0];
+        this.renderPresets();
+        this.loadActivePreset();
+        this.saveState();
+        showNotification(`Preset "${name}" deleted`, 'info');
     }
 
     async execute() {
         const preprompt = document.getElementById('loliConnectPreprompt')?.value || '';
         const input = document.getElementById('loliConnectInput')?.value || '';
         const outputField = document.getElementById('loliConnectOutput');
-        
+
         if (!input.trim()) {
-            alert('Please enter an input query');
+            showNotification('Please enter an input query', 'error');
             return;
         }
 
@@ -311,6 +418,12 @@ Output: Quantum computing is a type of computation that harnesses quantum mechan
             outputField.value = 'Processing...';
         }
 
+        // Update current preset value in memory
+        if (this.activePreset) {
+            this.presets[this.activePreset] = preprompt;
+        }
+
+        // Auto-save
         this.saveState();
 
         const fullPrompt = preprompt ? `${preprompt}\n\nInput: ${input}\nOutput:` : input;
@@ -420,66 +533,66 @@ function sendNaked() {
                 chat: null, speech: false, kanojo: false, useHistory: false, stream: true, yunaConfig: null
             })
         })
-        .then(async response => {
-            if (!response.ok) throw new Error('Network response was not ok');
+            .then(async response => {
+                if (!response.ok) throw new Error('Network response was not ok');
 
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
 
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
 
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split('\n');
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
 
-                // Keep the last incomplete line in the buffer
-                buffer = lines.pop() || '';
+                    // Keep the last incomplete line in the buffer
+                    buffer = lines.pop() || '';
 
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        try {
-                            const jsonStr = line.slice(6).trim();
-                            if (jsonStr) {
-                                const data = JSON.parse(jsonStr);
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const jsonStr = line.slice(6).trim();
+                                if (jsonStr) {
+                                    const data = JSON.parse(jsonStr);
 
-                                if (data.chunk) {
-                                    // Append each chunk to the existing text
-                                    if (elements.outputArea) {
-                                        elements.outputArea.value += data.chunk;
-                                        elements.outputArea.scrollTop = elements.outputArea.scrollHeight;
+                                    if (data.chunk) {
+                                        // Append each chunk to the existing text
+                                        if (elements.outputArea) {
+                                            elements.outputArea.value += data.chunk;
+                                            elements.outputArea.scrollTop = elements.outputArea.scrollHeight;
+                                        }
+                                    }
+
+                                    if (data.done) {
+                                        // Save the final output
+                                        if (elements.outputArea) {
+                                            localStorage.setItem('outputAreaContent', elements.outputArea.value);
+                                        }
+                                        break;
+                                    }
+
+                                    if (data.error) {
+                                        if (elements.outputArea) {
+                                            elements.outputArea.value = 'Error: ' + data.error;
+                                        }
+                                        break;
                                     }
                                 }
-
-                                if (data.done) {
-                                    // Save the final output
-                                    if (elements.outputArea) {
-                                        localStorage.setItem('outputAreaContent', elements.outputArea.value);
-                                    }
-                                    break;
-                                }
-
-                                if (data.error) {
-                                    if (elements.outputArea) {
-                                        elements.outputArea.value = 'Error: ' + data.error;
-                                    }
-                                    break;
-                                }
+                            } catch (e) {
+                                console.error('Error parsing SSE data:', e, 'Line:', line);
                             }
-                        } catch (e) {
-                            console.error('Error parsing SSE data:', e, 'Line:', line);
                         }
                     }
                 }
-            }
-        })
-        .catch(error => {
-            console.error('Streaming error:', error);
-            if (elements.outputArea) {
-                elements.outputArea.value = 'Error: Failed to get response';
-            }
-        });
+            })
+            .catch(error => {
+                console.error('Streaming error:', error);
+                if (elements.outputArea) {
+                    elements.outputArea.value = 'Error: Failed to get response';
+                }
+            });
     } else {
         // Handle non-streaming (existing code)
         fetch(`/message`, {
@@ -490,9 +603,9 @@ function sendNaked() {
                 chat: null, speech: false, kanojo: false, useHistory: false, stream: false, yunaConfig: null
             })
         })
-        .then(response => { if (!response.ok) throw new Error('Network response was not ok'); return response.json(); })
-        .then(data => { if (elements.outputArea) elements.outputArea.value = data.response; })
-        .catch(console.error);
+            .then(response => { if (!response.ok) throw new Error('Network response was not ok'); return response.json(); })
+            .then(data => { if (elements.outputArea) elements.outputArea.value = data.response; })
+            .catch(console.error);
     }
 }
 
@@ -511,225 +624,4 @@ elements.clearButton?.addEventListener('click', () => {
 
 elements.outputArea?.addEventListener('input', () => {
     if (elements.outputArea) localStorage.setItem('outputAreaContent', elements.outputArea.value);
-});
-
-window.kanojoManagerInstance = kanojoManagerInstance;
-
-class YunaSearchManager {
-    constructor() {
-        this.apiKey = localStorage.getItem('kagiApiKey') || '';
-        
-        // Check URL parameters on load
-        document.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const searchQuery = urlParams.get('search');
-            
-            if (searchQuery) {
-                togglePanel('yunaSearch');
-                const searchInput = document.getElementById('yunaSearchInput');
-                if (searchInput) {
-                    searchInput.value = decodeURIComponent(searchQuery);
-                }
-                this.search();
-            }
-            
-            this.setupKeyListener();
-            this.setupAutocomplete();
-        });
-    }
-
-    setupKeyListener() {
-        const searchInput = document.getElementById('yunaSearchInput');
-        if (searchInput) {
-            searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    this.clearSuggestions();
-                    this.search();
-                }
-            });
-        }
-    }
-
-    setupAutocomplete() {
-        const searchInput = document.getElementById('yunaSearchInput');
-        if (!searchInput) return;
-
-        // Create suggestions container if it doesn't exist
-        let suggestionsContainer = document.getElementById('yunaSearchSuggestions');
-        if (!suggestionsContainer) {
-            suggestionsContainer = document.createElement('div');
-            suggestionsContainer.id = 'yunaSearchSuggestions';
-            suggestionsContainer.className = 'yuna-search-suggestions';
-            searchInput.parentElement.appendChild(suggestionsContainer);
-        }
-
-        // Debounced autocomplete
-        let debounceTimer;
-        searchInput.addEventListener('input', (e) => {
-            clearTimeout(debounceTimer);
-            const query = e.target.value.trim();
-            
-            if (!query) {
-                this.clearSuggestions();
-                return;
-            }
-
-            debounceTimer = setTimeout(() => {
-                this.fetchSuggestions(query);
-            }, 300);
-        });
-
-        // Hide suggestions when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('#yunaSearchInput') && !e.target.closest('#yunaSearchSuggestions')) {
-                this.clearSuggestions();
-            }
-        });
-    }
-
-    async fetchSuggestions(query) {
-        try {
-            // Use local proxy instead of direct Kagisuggest
-            const response = await fetch(`/searchsuggest?q=${encodeURIComponent(query)}`);
-            if (!response.ok) return;
-            
-            const data = await response.json();
-            if (data && data[1] && data[1].length > 0) {
-                this.renderSuggestions(data[1].slice(0, 7)); // Limit to 7 suggestions
-            } else {
-                this.clearSuggestions();
-            }
-        } catch (error) {
-            console.error('Failed to fetch suggestions:', error);
-            this.clearSuggestions();
-        }
-    }
-
-    renderSuggestions(suggestions) {
-        const container = document.getElementById('yunaSearchSuggestions');
-        if (!container) return;
-
-        container.innerHTML = suggestions.map(suggestion => 
-            `<div class="suggestion-item" onclick="yunaSearchManager.selectSuggestion('${suggestion.replace(/'/g, "\\'")}')">${suggestion}</div>`
-        ).join('');
-        
-        container.style.display = 'block';
-    }
-
-    clearSuggestions() {
-        const container = document.getElementById('yunaSearchSuggestions');
-        if (container) {
-            container.innerHTML = '';
-            container.style.display = 'none';
-        }
-    }
-
-    selectSuggestion(suggestion) {
-        const searchInput = document.getElementById('yunaSearchInput');
-        if (searchInput) {
-            searchInput.value = suggestion;
-        }
-        this.clearSuggestions();
-        this.search();
-    }
-
-    async search() {
-        const query = document.getElementById('yunaSearchInput')?.value?.trim();
-        if (!query) return;
-
-        const newUrl = `${window.location.pathname}?search=${encodeURIComponent(query)}`;
-        window.history.pushState({}, '', newUrl);
-
-        const resultsContainer = document.getElementById('yunaSearchResults');
-        if (!resultsContainer) return;
-
-        resultsContainer.innerHTML = '<div class="text-center p-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Searching...</span></div></div>';
-
-        try {
-            if (!this.apiKey) {
-                this.apiKey = prompt('Please enter your Kagi API key (will be saved locally):');
-                if (!this.apiKey) {
-                    resultsContainer.innerHTML = '<div class="alert alert-warning">API key required for search.</div>';
-                    return;
-                }
-                localStorage.setItem('kagiApiKey', this.apiKey);
-            }
-
-            const response = await fetch(`/search?q=${encodeURIComponent(query)}&limit=20`, {
-                method: 'GET',
-                headers: {
-                    'X-Kagi-Key': this.apiKey
-                }
-            });
-
-            // Try to parse JSON safely
-            let data;
-            try {
-                data = await response.json();
-            } catch (e) {
-                throw new Error('Invalid response from Kagi API');
-            }
-
-            if (!response.ok || data.error) {
-                throw new Error(data.error || `Search failed: ${response.status}`);
-            }
-
-            this.renderResults(data.data, query);
-            
-            window.history.replaceState({}, '', window.location.pathname);
-            
-        } catch (err) {
-            console.error('Search error:', err);
-            resultsContainer.innerHTML = `<div class="alert alert-danger">Search failed: ${err.message}. <button class="btn btn-sm btn-link" onclick="localStorage.removeItem('kagiApiKey'); yunaSearchManager.search();">Reset API Key</button></div>`;
-            window.history.replaceState({}, '', window.location.pathname);
-        }
-    }
-
-    renderResults(results, query) {
-        const resultsContainer = document.getElementById('yunaSearchResults');
-        if (!results || results.length === 0) {
-            resultsContainer.innerHTML = '<div class="text-muted text-center p-4">No results found.</div>';
-            return;
-        }
-
-        let html = `<div class="search-results-grid">`;
-
-        results.forEach(result => {
-            if (result.t === 0) {
-                // Search result
-                html += `
-                    <div class="search-result-card glassy-surface">
-                        ${result.thumbnail ? `<img src="${result.thumbnail.url}" class="search-result-thumbnail" alt="thumbnail">` : ''}
-                        <div class="search-result-content">
-                            <a href="${result.url}" target="_blank" class="search-result-title">${result.title}</a>
-                            <p class="search-result-snippet">${result.snippet || ''}</p>
-                            <div class="search-result-meta">
-                                <small class="text-muted">${new URL(result.url).hostname}</small>
-                                ${result.published ? `<small class="text-muted ms-2">• ${new Date(result.published).toLocaleDateString()}</small>` : ''}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } else if (result.t === 1) {
-                // Related searches
-                html += `
-                    <div class="related-searches-card glassy-surface">
-                        <h6>Related Searches</h6>
-                        <div class="related-searches-list">
-                            ${result.list.map(term => 
-                                `<button class="btn btn-sm btn-outline-primary related-search-btn" onclick="document.getElementById('yunaSearchInput').value='${term.replace(/'/g, "\\'")}'; yunaSearchManager.search();">${term}</button>`
-                            ).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-        });
-
-        html += `</div>`;
-        resultsContainer.innerHTML = html;
-    }
-}
-
-const yunaSearchManager = new YunaSearchManager();
-window.yunaSearchManager = yunaSearchManager;
+})

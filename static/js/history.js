@@ -53,10 +53,32 @@ class ChatHistoryManager {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ task: 'load', chat: this.selectedFilename })
             });
+
+            if (!response.ok) {
+                if (response.redirected || response.status === 401 || response.status === 403) {
+                    console.warn('Session expired or invalid, redirecting to login.');
+                    window.location.href = '/';
+                    return;
+                }
+                throw new Error(`Server returned ${response.status}`);
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.warn('Received non-JSON response (likely HTML login page), redirecting.');
+                window.location.href = '/';
+                return;
+            }
+
             const history = await response.json();
-            
-            messageManagerInstance.container.innerHTML = '';
-            history.forEach(msg => messageManagerInstance.renderMessage(msg));
+
+            if (messageManagerInstance) {
+                const container = messageManagerInstance.ensureContainer();
+                if (container) {
+                    container.innerHTML = '';
+                    history.forEach(msg => messageManagerInstance.renderMessage(msg));
+                }
+            }
         } catch (err) {
             console.error('Error loading history:', err);
         }

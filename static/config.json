@@ -1,11 +1,17 @@
 {
     "ai": {
-        "names": ["Yuki", "Yuna"],
-        "bos": ["<|endoftext|>", true],
+        "names": [
+            "Yuki",
+            "Yuna"
+        ],
+        "bos": [
+            "<|endoftext|>",
+            true
+        ],
         "kokoro": false,
-        "audio": false,
-        "mind": false,
-        "hanasu": false,
+        "audio": true,
+        "mind": true,
+        "hanasu": true,
         "max_new_tokens": 1024,
         "context_length": 16384,
         "temperature": 0.8,
@@ -14,7 +20,18 @@
         "seed": -1,
         "top_k": 40,
         "top_p": 0.9,
-        "stop": ["<yuki>", "</yuki>", "<yuna>", "</yuna>", "<hito>", "</hito>", "<data>", "</data>", "<kanojo>", "</kanojo>"],
+        "stop": [
+            "<yuki>",
+            "</yuki>",
+            "<yuna>",
+            "</yuna>",
+            "<hito>",
+            "</hito>",
+            "<data>",
+            "</data>",
+            "<kanojo>",
+            "</kanojo>"
+        ],
         "batch_size": 2048,
         "threads": 8,
         "gpu_layers": -1,
@@ -25,10 +42,15 @@
     },
     "server": {
         "url": "",
-        "yuna_default_model": ["/Users/yuki/Documents/Github/aiflow/aiflow/models/yuna_mlx/mergedmlx"],
-        "voice_default_model": ["lib/models/hanasu/config.json", "lib/models/hanasu/G_50000.pth"],
+        "yuna_default_model": [
+            "/Users/yuki/Downloads/mlx-vlm-main 2/newyunalast"
+        ],
+        "voice_default_model": [
+            "lib/models/hanasu/config.json",
+            "/Users/yuki/Downloads/G_24000.pth"
+        ],
         "device": "mps",
-        "yuna_text_mode": "yunamlx",
+        "yuna_text_mode": "mlxvlm",
         "yuna_audio_mode": "hanasu"
     },
     "settings": {
